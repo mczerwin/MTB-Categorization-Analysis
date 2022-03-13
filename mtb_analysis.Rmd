@@ -1,0 +1,48 @@
+---
+title: "mtb_analysis"
+author: "Michael Czerwinski"
+date: "12/29/2021"
+output: pdf_document
+---
+
+```{r}
+install.packages("readxl")
+library(readxl)
+
+data <- read_excel('mtb_stats.xlsx', 'Sheet2')
+
+data
+
+
+labels <- data['label']
+```
+
+
+Average bikes by flip-chip setting
+```{r}
+
+no_setting_idx <- is.na(data['setting'])
+
+no_setting <- data[no_setting_idx, ]
+setting <- data[!no_setting_idx, ]
+
+mean_by_setting <- aggregate(setting[,-3], list( setting$model), FUN=mean) 
+mean_by_setting$model <- mean_by_setting$Group.1
+mean_by_setting <- mean_by_setting[,-1]
+
+no_setting <- no_setting[,-3]
+
+new_data <- rbind(mean_by_setting, no_setting)
+```
+
+
+PCA
+
+
+
+Rowdiness scale
+
+
+Clustering
+
+
