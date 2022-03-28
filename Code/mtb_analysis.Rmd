@@ -1,30 +1,115 @@
 ---
-title: "mtb_analysis"
-author: "Michael Czerwinski"
+title: "MTB Categorization Analysis"
+author: "Michael Czerwinski & Justin Schulberg"
 date: "12/29/2021"
-output: pdf_document
+output:
+  rmdformats::readthedown:
+    self_contained: TRUE
+    toc_depth: 4
+    highlight: tango
+    code_folding: hide
+    lightbox: TRUE
+    gallery: TRUE
+    toc_float: # a float toc will stick to the sidebar when scrolling
+      collapsed: false
+      
 ---
 
-```{r}
-install.packages("readxl")
-library(readxl)
+```{r fig.align='center', fig.height=6, fig.width=6, message=FALSE, warning=FALSE, include=FALSE}
+# Set our plot and code block specifications for the rest of the document.
+knitr::opts_chunk$set(fig.width = 9,
+                      fig.height = 6,
+                      fig.align = "center",
+                      # Set our code specifications for the rest of the document
+                      echo = T,
+                      warning = F,
+                      message = F)
 
-data <- read_excel('mtb_stats.xlsx', 'Sheet2')
+# Turn off scientific notation
+options(scipen=999)
 
-data
+# install.packages("pacman")
+# Use pacman to load packages. This'll check to see if a package is already installed; if not, it'll install it. If it is installed, it'll run the library() function.
+pacman::p_load(
+  readxl, # Used for reading in Excel packages
+  tidyverse, # Used for easy data manipulation
+  here, # Used for navigating project structures
+  kableExtra, # Used for RMarkdown formatting
+  pander # Pretty printing
+  )
 
 
-labels <- data['label']
+# Set our ggplot formats so we don't have to re-type the same code over-and-over again.
+theme_set(theme_classic())
+theme_update(plot.title = element_text(hjust = 0, color = "slateblue4", size = 20),
+  plot.subtitle = element_text(hjust = 0, color = "slateblue2", size = 12),
+  plot.caption = element_text(color = "dark gray", size = 10, face = "italic"),
+  axis.title.x = element_text(size = 14),
+  axis.title.y = element_text(size = 14),
+  axis.text.y = element_text(size = 10),
+  axis.text.x = element_text(size = 10))
+
 ```
 
 
-Average bikes by flip-chip setting
-```{r}
 
-no_setting_idx <- is.na(data['setting'])
+# Introduction
+For this project, our team will determine whether the specifications of mountain bikes (MTB) are enough to differentiate between the different types of mountain bike categories. 
 
-no_setting <- data[no_setting_idx, ]
-setting <- data[!no_setting_idx, ]
+Currently, full suspension mountain bikes come in multiple categories:
+
+- **Cross Country (XC)** | Tend to be the most lightweight, nimble, and designed to put the rider in an efficient pedaling position 
+- **Enduro** | Heavier frames, more travel and more downhill oriented geometry 
+- **Trail** | The most common category of bikes, considered to be the halfway point between XC and Enduro
+- **All Mountain** | A more niche category which some manufacturers claim to be more downhill focused than trail bikes, but not designed for downhill races like Enduro bikes are
+- **Downcountry** | A relatively new category between XC and Trail. Similar to the All Mountain category, these bikes aren’t race specific like XC bikes tend to be, but are lighter and faster than trail bikes.
+
+With all of the factors to consider when designing a bike, there are no clear boundaries between these categories. For example, one brand’s Downcountry bike could be what another brand considers a Trail bike. 
+
+**The goal of our project is to determine how many, if any, discrete categories should exist for mountain bikes.** Since most specifications and geometric measurements have one direction when moving across the spectrum of bikes, it’s reasonable to believe that these measurements could be reduced to much fewer dimensions, and perhaps even one continuous principle component rather than discrete categories. Here is a diagram of some of the different types of geometric specifications on mountain bikes:
+
+![Various Dimension Features of a Bike's Geometry](Images/Bike_Diagram.png)
+
+Let's start by taking a look at the data.
+
+```{r read_data}
+# Read in sheet 2 of our data
+mtb_data <- read_excel(here('Data/mtb_stats.xlsx'), 'Sheet2')
+
+# Pull out the class labels
+labels <- mtb_data %>% 
+  select(label)
+
+
+# Let's view the mtb_data output
+# In any kable outputs, display NAs as blanks
+opts <- options(knitr.kable.NA = "")
+
+mtb_data %>% 
+  head(15) %>%
+  # Fix up the headers by replacing the underscores with spaces
+  rename_all(funs(str_replace_all(., "_", " "))) %>% 
+  # Make everything proper capitalization
+  # rename_all(funs(str_to_title)) %>% 
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover"),
+                full_width = F,
+                font_size = 12) %>%
+  # Make the header row bold and black so it's easier to read
+  row_spec(0, bold = T, color = "black") %>% 
+  scroll_box(height = "400px", width = "100%")
+```
+
+
+
+# EDA
+## Average bikes by flip-chip setting
+```{r setting}
+# Split data based on setting vs. no setting
+no_setting <- mtb_data %>% 
+  filter(is.na(setting))
+setting <- mtb_data %>% 
+  filter(!is.na(setting))
 
 mean_by_setting <- aggregate(setting[,-3], list( setting$model), FUN=mean) 
 mean_by_setting$model <- mean_by_setting$Group.1
@@ -32,17 +117,17 @@ mean_by_setting <- mean_by_setting[,-1]
 
 no_setting <- no_setting[,-3]
 
-new_data <- rbind(mean_by_setting, no_setting)
+new_mtb_data <- rbind(mean_by_setting, no_setting)
 ```
 
 
-PCA
+# PCA
 
 
 
-Rowdiness scale
+# Rowdiness scale
 
 
-Clustering
+# Clustering
 
 
