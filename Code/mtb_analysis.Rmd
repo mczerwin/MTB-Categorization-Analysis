@@ -35,6 +35,7 @@ pacman::p_load(
   tidyverse, # Used for easy data manipulation
   here, # Used for navigating project structures
   kableExtra, # Used for RMarkdown formatting
+  DataExplorer, # Used for easy EDA
   pander # Pretty printing
   )
 
@@ -103,6 +104,37 @@ mtb_data %>%
 
 
 # EDA
+
+```{r demographics_explore}
+DataExplorer::plot_bar(mtb_data, 
+                       ggtheme = theme_classic(),
+                       title = 'Distribution of Categorical Demographic Variables',
+                       theme_config = theme(plot.title = element_text(hjust = 0, 
+                                                                          color = "slateblue4", 
+                                                                          size = 24),
+                                                plot.subtitle = element_text(hjust = 0, color = "slateblue2", size = 10),
+                                                plot.caption = element_text(color = "dark gray", size = 10, face = "italic"),
+                                                axis.title.x = element_text(size = 14),
+                                                axis.title.y = element_text(size = 14)),
+                       maxcat = 10,
+                       ncol = 2)
+
+DataExplorer::plot_density(mtb_data,
+                             ggtheme = theme_classic(),
+                             title = 'Distribution of Continuous Demographic Variables',
+                             geom_density_args = list(fill = 'slateblue'),
+                             theme_config = theme(plot.title = element_text(hjust = 0, 
+                                                                                color = "slateblue4", 
+                                                                                size = 24),
+                                                      plot.subtitle = element_text(hjust = 0, color = "slateblue2", size = 10),
+                                                      plot.caption = element_text(color = "dark gray", size = 10, face = "italic"),
+                                                      axis.title.x = element_text(size = 14),
+                                                      axis.title.y = element_text(size = 14)),
+                             ncol = 3)
+```
+
+
+
 ## Average bikes by flip-chip setting
 ```{r setting}
 # Split data based on setting vs. no setting
