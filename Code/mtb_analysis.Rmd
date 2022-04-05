@@ -36,6 +36,7 @@ pacman::p_load(
   here, # Used for navigating project structures
   kableExtra, # Used for RMarkdown formatting
   DataExplorer, # Used for easy EDA
+  corrplot, # Used for correlation plotting
   pander # Pretty printing
   )
 
@@ -75,7 +76,7 @@ Let's start by taking a look at the data.
 
 ```{r read_data}
 # Read in sheet 2 of our data
-mtb_data <- read_excel(here('Data/mtb_stats.xlsx'), 'Sheet2')
+mtb_data <- read_excel(here('Data/mtb_stats.xlsx'), 'Sheet1')
 
 # Pull out the class labels
 labels <- mtb_data %>% 
@@ -87,7 +88,7 @@ labels <- mtb_data %>%
 opts <- options(knitr.kable.NA = "")
 
 mtb_data %>% 
-  head(15) %>%
+  head(25) %>%
   # Fix up the headers by replacing the underscores with spaces
   rename_all(funs(str_replace_all(., "_", " "))) %>% 
   # Make everything proper capitalization
@@ -153,8 +154,68 @@ new_mtb_data <- rbind(mean_by_setting, no_setting)
 ```
 
 
-# PCA
+# Variation Amongst Featureset
+The first thing we'll do is look to see if any of the features in our dataset are better at explaining the variation amongst the different bikes than other features. That is, it's completely possible that two features are similar and don't have much variation in them, even across some of the different bike categories. To do so, we'll:
 
+1. Look for highly correlated features and flag these for potential removal;  
+2. Run Principal Component Analysis (PCA) to see if certain features are better at explaining the variation in our data better than others.
+
+## 1. Correlation
+First, let's take a look at our most highly correlated features. We'll use the `corrplot()` function to better order the highly correlated features by the angular order of their eigenvectors.
+
+```{r correlation}
+mtb_correlation <- mtb_data %>% 
+  # Select our variables of interest
+  select_if(is.numeric) %>% 
+  # Remove rows with NAs in them
+  drop_na() %>% 
+  # Build our correlation matrix
+  cor() 
+
+# Convert our results into a tibble for easier manipulation
+mtb_correlation_df <- mtb_correlation %>% 
+  as_tibble() %>% 
+  mutate(variable = colnames(mtb_correlation)) %>% 
+  relocate(variable, everything())
+
+# Build our correlation plot, using the angular order of the eigenvectors
+corrplot(mtb_correlation,
+         diag = F,
+         col = COL2('PRGn'),
+         tl.col = 'slateblue4',
+         type = 'lower',
+         method = 'color',
+         order = 'AOE',
+         title = 'Mountain Bike Feature Correlation'
+         )
+
+```
+
+Here we see some obvious correlations, for example:  
+- `f_piston` (front brakes) is perfectly correlated with `r_piston` (rear brakes), which makes sense since mountain bikes tend to use the same types/spec of brakes for the front vs. rear tires.  
+- `fork_travel` has a correlation above .95 with the variables: `r mtb_correlation_df %>% select(variable, fork_travel) %>% filter((fork_travel > .95) | (fork_travel < -.95)) %>% select(variable) %>% as.character()`. Some of these make sense; for example, `rear_travel` *should* be highly correlated with `fork_travel`. Some of the other variables would require a bit more analysis, but are good to note.
+
+In all, here are the most highly correlated variables (i.e. variables which have a correlation above .95 or below -.95):
+
+```{r high_correlation}
+mtb_correlation_df %>% 
+  pivot_longer(-variable, 
+               names_to = 'correlated_variable', 
+               values_to = 'correlation') %>% 
+  filter(variable != correlated_variable) %>% 
+  filter((correlation > .95) | (correlation < -.95)) %>% 
+  pander()
+
+```
+
+For now, we'll opt to include everything. But later on, as we analyze the importance of different features, we'll look to remove some of the above variables first.
+
+## 2. PCA
+Next, we'll apply PCA to our dataset.
+
+```{r pca}
+
+```
 
 
 # Rowdiness scale
