@@ -276,7 +276,7 @@ g <- ggbiplot(mtb_pca,
 g <- g + theme(legend.direction = 'horizontal',
                legend.position = 'top')
 print(g)
-
+?ggbiplot()
 ```
 
 
@@ -284,5 +284,65 @@ print(g)
 
 
 # Clustering
+
+```{r}
+
+
+# How many clusters are necessary? 4
+
+mtb_numeric <- mtb_no_null %>% select(-label)
+
+clusters <- 1:10
+dists <- c()
+for (c in 1:10){
+  km <- kmeans(mtb_numeric, centers=c, iter.max=1000)
+  dists <- c(dists, km$tot.withinss)
+}
+
+plot(clusters, dists, type='l')
+
+```
+
+```{r}
+
+# Let's see where these clusters would end up on the 2D PCA plot
+#TODO keep row names on the data, but not as an actual column
+mtb_standard_scaled <- scale(mtb_numeric)
+mtb_pca_scaled <- prcomp(mtb_standard_scaled,
+                  center = F,
+                  scale. = F)
+?prcomp()
+
+pca_2_scaled <- as.matrix(mtb_standard_scaled) %*% as.matrix(mtb_pca_scaled$rotation[,1:2])
+
+pca_km_scaled <- kmeans(pca_2_scaled, centers=4, iter.max=1000)
+
+#Something's not working here, definitely hitting a local min or something
+colorgroups <- function(g){
+  if (g == 'tr'){
+    return('blue')
+  }
+  else if (g == 'xc'){
+    return('pink')
+  }
+  else if (g == 'dc'){
+    return('darkgoldenrod3')
+  }
+  else if (g == 'am'){
+    return('red')
+  }
+  else if (g == 'en'){
+    return('green')
+  }
+}
+cols <- unlist(lapply(mtb_data$label, colorgroups))
+
+
+plot(pca_2_scaled, col=cols)
+points(pca_km_scaled$centers, col='black', pch='x')
+
+#TODO let's look at this bottom right cluster
+
+```
 
 
