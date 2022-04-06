@@ -76,7 +76,10 @@ Let's start by taking a look at the data.
 
 ```{r read_data}
 # Read in sheet 2 of our data
-mtb_data <- read_excel(here('Data/mtb_stats.xlsx'), 'Sheet1')
+mtb_data <- read_excel(here::here('Data/mtb_stats.xlsx'), 'Sheet1')
+mtb_data <- mtb_data %>% 
+  # Clean up the label column
+  mutate(label = str_replace_all(str_to_lower(label), '[:punct:]', ''))
 
 # Pull out the class labels
 labels <- mtb_data %>% 
@@ -165,12 +168,14 @@ First, let's take a look at our most highly correlated features. We'll use the `
 
 ```{r correlation}
 mtb_correlation <- mtb_data %>% 
+  # Get rid of price for now
+  select(-price) %>% 
   # Select our variables of interest
   select_if(is.numeric) %>% 
   # Remove rows with NAs in them
-  drop_na() %>% 
-  # Build our correlation matrix
-  cor() 
+  # drop_na() %>% 
+  # Build our correlation matrix, such that missing values are handled by casewise deletion
+  cor(use = 'complete.obs') 
 
 # Convert our results into a tibble for easier manipulation
 mtb_correlation_df <- mtb_correlation %>% 
@@ -193,7 +198,7 @@ corrplot(mtb_correlation,
 
 Here we see some obvious correlations, for example:  
 - `f_piston` (front brakes) is perfectly correlated with `r_piston` (rear brakes), which makes sense since mountain bikes tend to use the same types/spec of brakes for the front vs. rear tires.  
-- `fork_travel` has a correlation above .95 with the variables: `r mtb_correlation_df %>% select(variable, fork_travel) %>% filter((fork_travel > .95) | (fork_travel < -.95)) %>% select(variable) %>% as.character()`. Some of these make sense; for example, `rear_travel` *should* be highly correlated with `fork_travel`. Some of the other variables would require a bit more analysis, but are good to note.
+- `fork_travel` has a correlation above .95 with: `r mtb_correlation_df %>% select(variable, fork_travel) %>% filter((fork_travel > .95) | (fork_travel < -.95)) %>% select(variable) %>% as.character()`. This make sense; for example, `rear_travel` *should* be highly correlated with `fork_travel`. 
 
 In all, here are the most highly correlated variables (i.e. variables which have a correlation above .95 or below -.95):
 
@@ -211,9 +216,48 @@ mtb_correlation_df %>%
 For now, we'll opt to include everything. But later on, as we analyze the importance of different features, we'll look to remove some of the above variables first.
 
 ## 2. PCA
-Next, we'll apply PCA to our dataset.
+Next, we'll apply PCA to our dataset. In so doing, we'll have to center and scale our data given how different the ranges are for certain measurements. Let's take a look at our 4 principal components which explain the largest proportion of variance in the data:
 
 ```{r pca}
+mtb_no_null <- mtb_data %>% 
+                select(-price) %>% 
+                select_if(is.numeric) %>% 
+                bind_cols(label = mtb_data$label) %>% 
+                drop_na()
+
+mtb_pca <- prcomp(mtb_no_null %>% select(-label),
+                  center = TRUE,
+                  scale. = TRUE)
+
+# Put our summary results into a dataframe
+mtb_pca_df <- tibble(variable = c('Standard Deviation', 'Proportion of Variance', 'Cumulative Proportion')) %>% 
+  bind_cols(summary(mtb_pca)$importance)
+
+mtb_pca_df %>% 
+  # Only display the first 5 columns
+  select(c(variable:PC4)) %>% 
+  pander()
+
+
+```
+
+We can see that, actually, starting at our $3^{\text{rd}}$ principal component, nearly `r 100*round(mtb_pca_df %>% filter(variable == 'Cumulative Proportion') %>% select(PC3) %>% as.numeric(), 3)`% of the data's variation is properly explained. Let's take a look at our top 2 principal components:
+
+```{r pca_viz}
+pacman::p_load(devtools)
+install_github("vqv/ggbiplot")
+pacman::p_load(ggbiplot)
+g <- ggbiplot(mtb_pca,
+              obs.scale = 1,
+              var.scale = 1,
+              groups = mtb_no_null$label,
+              ellipse = TRUE,
+              circle = TRUE,
+              ellipse.prob = .5)
+# g <- g + scale_color_discrete(name = '')
+g <- g + theme(legend.direction = 'horizontal',
+               legend.position = 'top')
+print(g)
 
 ```
 
