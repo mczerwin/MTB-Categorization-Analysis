@@ -22,6 +22,7 @@ With all of the factors to consider when designing a bike, there are no clear bo
 | Code | This section includes all of the `R` code used for analysis. |
 | Data | This section includes the main datasets used throughout the analyses. |
 | Images | This section includes image outputs from the different analyses performed. |
+| Reports | This section includes final reports and presentation documents related to the analyses. |
 
 
 
