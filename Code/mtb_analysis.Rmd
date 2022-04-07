@@ -147,13 +147,32 @@ no_setting <- mtb_data %>%
 setting <- mtb_data %>% 
   filter(!is.na(setting))
 
-mean_by_setting <- aggregate(setting[,-3], list( setting$model), FUN=mean) 
+
+
+setting <- cbind(setting$model, setting$label, select_if(setting, is.numeric))
+setting$model <- setting$`setting$model`
+setting <- setting %>% select(-`setting$model`)
+setting$label <- setting$`setting$label`
+setting <- setting %>% select(-`setting$label`)
+
+mean_by_setting <- aggregate(x=select(setting, -c(model, label)),
+                             by=list(setting$model, setting$label),
+                             FUN=mean)
 mean_by_setting$model <- mean_by_setting$Group.1
-mean_by_setting <- mean_by_setting[,-1]
+mean_by_setting$label <- mean_by_setting$Group.2
+mean_by_setting <- mean_by_setting %>% select(-c(Group.1, Group.2))
 
-no_setting <- no_setting[,-3]
+no_setting <- cbind(no_setting$model, no_setting$label, select_if(no_setting, is.numeric))
+no_setting$model <- no_setting$`no_setting$model`
+no_setting <- no_setting %>% select(-`no_setting$model`)
+no_setting$label <- no_setting$`no_setting$label`
+no_setting <- no_setting %>% select(-`no_setting$label`)
 
-new_mtb_data <- rbind(mean_by_setting, no_setting)
+new_mtb_data <- data.frame(rbind(mean_by_setting, no_setting))
+
+rownames(new_mtb_data) <- new_mtb_data$model
+
+
 ```
 
 
@@ -222,18 +241,18 @@ Next, we'll apply PCA to our dataset. In so doing, we'll have to center and scal
 
 # Impute missing values with column mean (not really best practice, but good enough)
 
-for (c in 1:ncol(mtb_data)){
-  if (is.numeric(unlist(mtb_data[,c]))){
-    print(colnames(mtb_data)[c])
-    mtb_data[is.na(mtb_data[,c]), c] <- mean(unlist(mtb_data[,c]), na.rm=TRUE)  
+for (c in 1:ncol(new_mtb_data)){
+  if (is.numeric(unlist(new_mtb_data[,c]))){
+    print(colnames(new_mtb_data)[c])
+    new_mtb_data[is.na(new_mtb_data[,c]), c] <- mean(unlist(new_mtb_data[,c]), na.rm=TRUE)  
   }
 }
 
 # TODO get average bikes by setting  to work above
-mtb_no_null <- mtb_data %>% 
-                select(-c(price, url, build_type, image, setting)) %>% 
+mtb_no_null <- new_mtb_data %>% 
+                select(-price) %>%
                 select_if(is.numeric) %>% 
-                bind_cols(label = mtb_data$label) %>%
+                bind_cols(label = new_mtb_data$label) %>%
                 drop_na()
 
 
@@ -276,7 +295,6 @@ g <- ggbiplot(mtb_pca,
 g <- g + theme(legend.direction = 'horizontal',
                legend.position = 'top')
 print(g)
-?ggbiplot()
 ```
 
 
@@ -306,12 +324,11 @@ plot(clusters, dists, type='l')
 ```{r}
 
 # Let's see where these clusters would end up on the 2D PCA plot
-#TODO keep row names on the data, but not as an actual column
+
 mtb_standard_scaled <- scale(mtb_numeric)
 mtb_pca_scaled <- prcomp(mtb_standard_scaled,
                   center = F,
                   scale. = F)
-?prcomp()
 
 pca_2_scaled <- as.matrix(mtb_standard_scaled) %*% as.matrix(mtb_pca_scaled$rotation[,1:2])
 
@@ -335,13 +352,17 @@ colorgroups <- function(g){
     return('green')
   }
 }
-cols <- unlist(lapply(mtb_data$label, colorgroups))
+cols <- unlist(lapply(new_mtb_data$label, colorgroups))
 
 
 plot(pca_2_scaled, col=cols)
 points(pca_km_scaled$centers, col='black', pch='x')
+text(pca_2_scaled[,1], pca_2_scaled[,2], rownames(pca_2_scaled))
+#TODO let's look at this bottom cluster
 
-#TODO let's look at this bottom right cluster
+#Based on PCA mapping, the blur tr, expic, Exie, Ripley, and Element all have less chainstay length, and less pistons?? wow, should we exclude piston count?? with more 2 piston bikes getting added, it evens out the average, so these aren't showing up as much anymore
+
+#Niner has low reach numbers on its bikes - could be because we used the Medium for these!
 
 ```
 
