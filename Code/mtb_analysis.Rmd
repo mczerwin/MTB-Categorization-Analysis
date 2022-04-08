@@ -311,11 +311,12 @@ print(g)
 # How many clusters are necessary? 4
 
 mtb_numeric <- mtb_no_null %>% select(-label)
+mtb_standard_scaled <- scale(mtb_numeric)
 
 clusters <- 1:10
 dists <- c()
 for (c in 1:10){
-  km <- kmeans(mtb_numeric, centers=c, iter.max=1000)
+  km <- kmeans(mtb_scaled_twice, centers=c, iter.max=1000)
   dists <- c(dists, km$tot.withinss)
 }
 
@@ -328,14 +329,14 @@ plot(clusters, dists, type='l', xlab='Clusters', ylab='Total Sum of Squared Eucl
 
 # Let's see where these clusters would end up on the 2D PCA plot
 
-mtb_standard_scaled <- scale(mtb_numeric)
+
 mtb_pca_scaled <- prcomp(mtb_standard_scaled,
                   center = F,
                   scale. = F)
 
 pca_2_scaled <- as.matrix(mtb_standard_scaled) %*% as.matrix(mtb_pca_scaled$rotation[,1:2])
 
-pca_km_scaled <- kmeans(pca_2_scaled, centers=4, iter.max=1000)
+pca_km_scaled <- kmeans(pca_2_scaled, centers=3, iter.max=1000)
 
 #Something's not working here, definitely hitting a local min or something
 colorgroups <- function(g){
@@ -357,7 +358,7 @@ colorgroups <- function(g){
 }
 catNames <- c('Cross Country', 'Downcountry', 'Trail', 'All Mountain', 'Enduro')
 cols <- unlist(lapply(new_mtb_data$label, colorgroups))
-unlist(lapply(catNames, colorgroups))
+
 jpeg('../Images/PCA_clusters.jpg')
 plot(pca_2_scaled, col=cols)
 points(pca_km_scaled$centers, col='black', pch='x', cex=1.5)
@@ -365,10 +366,9 @@ points(pca_km_scaled$centers, col='black', pch='x', cex=1.5)
 legend("bottomleft", legend= c(catNames, 'Cluster Center'), col=c(unlist(lapply(catNames, colorgroups)), 'black'), pch=c(rep('o', 5), 'X'))
 
 #TODO let's look at this bottom cluster - both Niner bikes
-
-#Based on PCA mapping, the blur tr, expic, Exie, Ripley, and Element all have less chainstay length, and less pistons?? wow, should we exclude piston count?? with more 2 piston bikes getting added, it evens out the average, so these aren't showing up as much anymore
-?points()
 #Niner has low reach numbers on its bikes - could be because we used the Medium for these!
+#Based on PCA mapping, the blur tr, expic, Exie, Ripley, and Element all have less chainstay length, and less pistons?? wow, should we exclude piston count?? with more 2 piston bikes getting added, it evens out the average, so these aren't showing up as much anymore
+
 
 ```
 
