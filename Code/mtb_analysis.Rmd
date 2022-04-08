@@ -30,6 +30,7 @@ options(scipen=999)
 
 # install.packages("pacman")
 # Use pacman to load packages. This'll check to see if a package is already installed; if not, it'll install it. If it is installed, it'll run the library() function.
+library(pacman)
 pacman::p_load(
   readxl, # Used for reading in Excel packages
   tidyverse, # Used for easy data manipulation
@@ -235,15 +236,14 @@ mtb_correlation_df %>%
 For now, we'll opt to include everything. But later on, as we analyze the importance of different features, we'll look to remove some of the above variables first.
 
 ## 2. PCA
-Next, we'll apply PCA to our dataset. In so doing, we'll have to center and scale our data given how different the ranges are for certain measurements. Let's take a look at our 4 principal components which explain the largest proportion of variance in the data:
+Next, we'll apply PCA to our dataset. In so doing, we'll have to center and scale our data given how different the ranges are for certain measurements. Let's take a look at our 5 principal components which explain the largest proportion of variance in the data:
 
 ```{r pca}
 
 # Impute missing values with column mean (not really best practice, but good enough)
-
 for (c in 1:ncol(new_mtb_data)){
   if (is.numeric(unlist(new_mtb_data[,c]))){
-    print(colnames(new_mtb_data)[c])
+    # print(colnames(new_mtb_data)[c])
     new_mtb_data[is.na(new_mtb_data[,c]), c] <- mean(unlist(new_mtb_data[,c]), na.rm=TRUE)  
   }
 }
@@ -256,7 +256,7 @@ mtb_no_null <- new_mtb_data %>%
                 drop_na()
 
 
-head(mtb_no_null)
+# head(mtb_no_null)
 
 
 mtb_pca <- prcomp(mtb_no_null %>% select(-label),
@@ -268,50 +268,54 @@ mtb_pca_df <- tibble(variable = c('Standard Deviation', 'Proportion of Variance'
   cbind(summary(mtb_pca)$importance)
 
 
-head(mtb_pca_df)
+# head(mtb_pca_df)
 
 mtb_pca_df %>% 
-  # Only display the first 5 columns
-  select(c(variable:PC4)) %>% 
+  # Only display the first 6 columns
+  select(c(variable:PC5)) %>% 
   pander()
 
 
 ```
 
-We can see that, actually, starting at our $3^{\text{rd}}$ principal component, nearly `r 100*round(mtb_pca_df %>% filter(variable == 'Cumulative Proportion') %>% select(PC3) %>% as.numeric(), 3)`% of the data's variation is properly explained. Let's take a look at our top 2 principal components:
+We can see that, actually, starting at our $5^{\text{rd}}$ principal component, nearly `r 100*round(mtb_pca_df %>% filter(variable == 'Cumulative Proportion') %>% select(PC5) %>% as.numeric(), 3)`% of the data's variation is properly explained. Let's take a look at our top 2 principal components:
 
 ```{r pca_viz}
-pacman::p_load(devtools)
-install_github("vqv/ggbiplot")
-pacman::p_load(ggbiplot)
-g <- ggbiplot(mtb_pca,
+p_load(devtools,
+       ggbiplot)
+
+ggbiplot(mtb_pca,
               obs.scale = 1,
               var.scale = 1,
               groups = mtb_no_null$label,
               ellipse = TRUE,
-              circle = TRUE,
-              ellipse.prob = .5)
-# g <- g + scale_color_discrete(name = '')
-g <- g + theme(legend.direction = 'horizontal',
+              circle = FALSE,
+              ellipse.prob = .5) + 
+  theme(legend.direction = 'horizontal',
                legend.position = 'top')
 
-jpeg('../Images/pca.jpg')
-print(g)
+# jpeg('../Images/pca.jpg')
+
 ```
 
+Here we can see that our top 2 principal components, which explain roughly `r 100*round(mtb_pca_df %>% filter(variable == 'Cumulative Proportion') %>% select(PC2) %>% as.numeric(), 3)`% of the variation in our data, are already pretty good representations for describing the different components in our dataset. Even so, the groupings are distinctly plotted on the 2-D graph.
 
 # Rowdiness scale
 
 
 # Clustering
 
+## K-Means
 ```{r}
-
-
 # How many clusters are necessary? 4
+<<<<<<< HEAD
 
 mtb_numeric <- mtb_no_null %>% select(-label)
 mtb_standard_scaled <- scale(mtb_numeric)
+=======
+mtb_numeric <- mtb_no_null %>% 
+  select(-label)
+>>>>>>> 3b90766b6aa84d2301b110ad3d48bc86af28ae3b
 
 clusters <- 1:10
 dists <- c()
@@ -320,13 +324,23 @@ for (c in 1:10){
   dists <- c(dists, km$tot.withinss)
 }
 
-jpeg('../Images/Kmeans.jpg')
-plot(clusters, dists, type='l', xlab='Clusters', ylab='Total Sum of Squared Euclidean Distances')
+# jpeg('../Images/Kmeans.jpg')
+# plot(clusters, dists, type='l', xlab='Clusters', ylab='Total Sum of Squared Euclidean Distances')
+
+# Plot our results
+tibble(clusters = clusters,
+       dists = dists) %>% 
+  ggplot(aes(x = clusters, y = dists)) + 
+  geom_point(size = 3, alpha = .9, color = 'slateblue') +
+  geom_line(size = 2, alpha = 1, color = 'slateblue1') + 
+  labs(title = "K-Means Clustering of MTB Data",
+       subtitle = 'Method uses `tot.withinss` parameter to measure distances.',
+       x = 'Clusters',
+       y = 'Total Sum of Squared Euclidean Distances')
 
 ```
 
 ```{r}
-
 # Let's see where these clusters would end up on the 2D PCA plot
 
 
@@ -358,10 +372,15 @@ colorgroups <- function(g){
 }
 catNames <- c('Cross Country', 'Downcountry', 'Trail', 'All Mountain', 'Enduro')
 cols <- unlist(lapply(new_mtb_data$label, colorgroups))
+<<<<<<< HEAD
 
 jpeg('../Images/PCA_clusters.jpg')
+=======
+unlist(lapply(catNames, colorgroups))
+# jpeg('../Images/PCA_clusters.jpg')
+>>>>>>> 3b90766b6aa84d2301b110ad3d48bc86af28ae3b
 plot(pca_2_scaled, col=cols)
-points(pca_km_scaled$centers, col='black', pch='x', cex=1.5)
+points(pca_km_scaled$centers, col = 'slateblue4', pch = 'x', cex = 1.5)
 # text(pca_2_scaled[,1], pca_2_scaled[,2], rownames(pca_2_scaled))
 legend("bottomleft", legend= c(catNames, 'Cluster Center'), col=c(unlist(lapply(catNames, colorgroups)), 'black'), pch=c(rep('o', 5), 'X'))
 
@@ -372,4 +391,68 @@ legend("bottomleft", legend= c(catNames, 'Cluster Center'), col=c(unlist(lapply(
 
 ```
 
+
+## Gaussian Mixture Model (GMM)
+In this section, we'll take a more probabilistic model to our clustering. That is, we'll use a Guassian Mixture Model (GMM) to build out normally distributed subgroupings within our mountain bike dataset, where the densities of each of the subgroupings represents a probability that a bike belongs to that subgrouping. Unlike K-Means, which is a more centroid-based clustering method, GMM is more of a distribution-based clustering method.
+
+```{r gmm}
+p_load(ClusterR)
+
+# Build our GMM model
+mtb_gmm <- GMM(mtb_standard_scaled,
+               dist_mode = 'eucl_dist', # Distance metric to use during seeding of initial means clustering
+               seed_mode = 'random_subset', # How initial means are seeded prior to EM alg
+               km_iter = 10, # Num of iterations of K-Means alg
+               em_iter = 10, # Num of iterations of EM alg
+               verbose = T
+               )
+
+mtb_gmm_pred <- predict(mtb_gmm, mtb_standard_scaled)
+
+opt_gmm <- Optimal_Clusters_GMM(mtb_standard_scaled, 
+                               max_clusters = 20, 
+                               criterion = "BIC", 
+                               dist_mode = "eucl_dist", 
+                               seed_mode = "random_subset",
+                               km_iter = 10, 
+                               em_iter = 10, 
+                               var_floor = 1e-10, 
+                               plot_data = T)
+
+
+```
+
+Use the `mclust` package in R, which utilizes Bayesian Information Criterion (BIC) to optimize the number of clusters.
+```{r gmm2}
+p_load(mclust)
+
+mtb_gmm2 <- Mclust(mtb_standard_scaled)
+
+#or specify number of clusters
+# mb3 = Mclust(iris[,-5], 3)
+
+# optimal selected model
+mtb_gmm2$modelName
+
+# optimal number of cluster
+mtb_gmm2$G
+
+# probality for an observation to be in a given cluster
+head(mtb_gmm2)
+
+# get probabilities, means, variances
+summary(mtb_gmm2, parameters = TRUE)
+
+plot(mtb_gmm2, 'classification')
+
+```
+
+
+
+## Multi-class SVM
+
+
+
+
+# Conclusions/Findings
 
