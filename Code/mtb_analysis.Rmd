@@ -377,18 +377,9 @@ colorgroups <- function(g){
 }
 catNames <- c('Cross Country', 'Downcountry', 'Trail', 'All Mountain', 'Enduro')
 cols <- unlist(lapply(new_mtb_data$label, colorgroups))
-<<<<<<< HEAD
-<<<<<<< HEAD
 
-jpeg('../Images/PCA_clusters.jpg')
-=======
 unlist(lapply(catNames, colorgroups))
 # jpeg('../Images/PCA_clusters.jpg')
->>>>>>> 3b90766b6aa84d2301b110ad3d48bc86af28ae3b
-=======
-unlist(lapply(catNames, colorgroups))
-# jpeg('../Images/PCA_clusters.jpg')
->>>>>>> 3b90766b6aa84d2301b110ad3d48bc86af28ae3b
 plot(pca_2_scaled, col=cols)
 points(pca_km_scaled$centers, col = 'slateblue4', pch = 'x', cex = 1.5)
 # text(pca_2_scaled[,1], pca_2_scaled[,2], rownames(pca_2_scaled))
@@ -458,14 +449,6 @@ plot(mtb_gmm2, 'classification')
 ```
 
 
-
-## Multi-class SVM
-
-
-
-
-# Conclusions/Findings
-
 ## Gaussian Mixture Model (GMM)
 In this section, we'll take a more probabilistic model to our clustering. That is, we'll use a Guassian Mixture Model (GMM) to build out normally distributed subgroupings within our mountain bike dataset, where the densities of each of the subgroupings represents a probability that a bike belongs to that subgrouping. Unlike K-Means, which is a more centroid-based clustering method, GMM is more of a distribution-based clustering method.
 
@@ -525,7 +508,76 @@ plot(mtb_gmm2, 'classification')
 
 ## Multi-class SVM
 
+```{r}
+library(e1071)
+library(caret)
 
+#convert all mountain category to enduro, dc -> Xc?
+remap <- function(x){
+  if (x=='am' || x=='en'){
+    return(4)
+  }
+  else if(x=='xc'){
+    return(1)
+  }
+  else if(x=='dc'){
+    return(2)
+  }
+  else if(x=='tr'){
+    return(3)
+  }
+}
+labels <- as.factor(unlist(lapply(new_mtb_data$label, remap)))
+n <- length(labels)
+test_idx <- sort(sample(1:n, round(n/5)))
+
+Xtest <- mtb_standard_scaled[test_idx, ]
+Xtrain <-  mtb_standard_scaled[-test_idx, ]
+
+trainSVM <- function(x){
+  xtest <- mtb_standard_scaled[x,]
+  xtrain <- mtb_standard_scaled[-x,]
+  ytest <- labels[x]
+  ytrain <- labels[-x]
+  
+  clf <- svm(x=xtrain, y=ytrain)
+  preds <- predict(clf, xtest)
+  
+  acc <- 0
+  cm <- table(ytest, preds)
+  for (i in 1:length(unique(labels))){
+    acc <- acc + cm[i,i]
+  }
+  return(acc/sum(cm))
+}
+
+folds <- createFolds(labels, k=10)
+
+accs <- c()
+
+for (fold in folds){
+  acc <- trainSVM(fold)
+  accs <- c(accs, acc)
+}
+
+mean(accs)
+
+
+?svm()
+
+
+clf <- svm(x=Xtrain, y=ytrain)
+
+
+y_pred <- predict(clf, Xtest)
+
+sum(table(y_pred, y_pred))
+
+
+
+
+
+```
 
 
 # Conclusions/Findings
