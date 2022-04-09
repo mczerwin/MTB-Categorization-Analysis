@@ -513,32 +513,52 @@ library(e1071)
 library(caret)
 
 #convert all mountain category to enduro, dc -> Xc?
-remap <- function(x){
+remap <- function(x, num){
   if (x=='am' || x=='en'){
-    return(4)
+    if (num){
+      return(4)
+    }
+    else{
+      return('Enduro')
+    }
   }
   else if(x=='xc'){
-    return(1)
+    if(num){
+      return(1)
+    }
+    else{
+      return('Cross Country')
+    }
   }
   else if(x=='dc'){
-    return(2)
+    if(num){
+      return(2)
+    }
+    else{
+      return('Downcountry')
+    }
   }
   else if(x=='tr'){
-    return(3)
+    if(num){
+      return(3)
+    }
+    else{
+      return('Trail')
+    }
   }
 }
-labels <- as.factor(unlist(lapply(new_mtb_data$label, remap)))
+labels <- as.factor(unlist(lapply(new_mtb_data$label, remap, F)))
 n <- length(labels)
 test_idx <- sort(sample(1:n, round(n/5)))
 
 Xtest <- mtb_standard_scaled[test_idx, ]
 Xtrain <-  mtb_standard_scaled[-test_idx, ]
 
-trainSVM <- function(x){
-  xtest <- mtb_standard_scaled[x,]
-  xtrain <- mtb_standard_scaled[-x,]
-  ytest <- labels[x]
-  ytrain <- labels[-x]
+trainSVM <- function(x, y, idx){
+  xtest <- x[idx,]
+  xtrain <- x[-idx,]
+  ytest <- y[idx]
+  ytrain <- y[-idx]
   
   clf <- svm(x=xtrain, y=ytrain)
   preds <- predict(clf, xtest)
@@ -556,28 +576,52 @@ folds <- createFolds(labels, k=10)
 accs <- c()
 
 for (fold in folds){
-  acc <- trainSVM(fold)
+  acc <- trainSVM(mtb_standard_scaled, labels, fold)
   accs <- c(accs, acc)
 }
 
 mean(accs)
 
-
-?svm()
-
-
-clf <- svm(x=Xtrain, y=ytrain)
+# Roughly 60% accuracy when treating down country as separate category
+# But - roughly 77% accuracy when treating down country as XC, only 65% accuracy when treating downcountry as trail, suggests that downcountry bikes are more akin to XC than they are trail
+```
 
 
-y_pred <- predict(clf, Xtest)
+```{r}
 
-sum(table(y_pred, y_pred))
+folds <- createFolds(labels, k=10)
+
+accs_2pc <- c()
+
+for (fold in folds){
+  acc <- trainSVM(pca_2_scaled, labels, fold)
+  accs_2pc <- c(accs, acc)
+}
+
+mean(accs_2pc)
 
 
 
+plot(pcsvm)
 
+dat <- data.frame(x=cbind(pca_2_scaled[,2], pca_2_scaled[,1]), y=labels)
+pcsvm <- svm(y~., data=dat)
+
+# jpeg('roughSVM.jpg')
+plot(pcsvm, dat)
+
+
+# circle -> correctly predicted
+# X -> incorrectly predicted
+# black -> true XC
+# Red -> true DC
+# Blue -> true TR
+# Green -> true EN
+                  
 
 ```
+
+
 
 
 # Conclusions/Findings
