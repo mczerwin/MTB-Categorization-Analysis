@@ -113,7 +113,7 @@ mtb_data %>%
 ```{r demographics_explore}
 DataExplorer::plot_bar(mtb_data, 
                        ggtheme = theme_classic(),
-                       title = 'Distribution of Categorical Demographic Variables',
+                       title = 'Distribution of Categorical Variables',
                        theme_config = theme(plot.title = element_text(hjust = 0, 
                                                                           color = "slateblue4", 
                                                                           size = 24),
@@ -126,7 +126,7 @@ DataExplorer::plot_bar(mtb_data,
 
 DataExplorer::plot_density(mtb_data,
                              ggtheme = theme_classic(),
-                             title = 'Distribution of Continuous Demographic Variables',
+                             title = 'Distribution of Continuous Variables',
                              geom_density_args = list(fill = 'slateblue'),
                              theme_config = theme(plot.title = element_text(hjust = 0, 
                                                                                 color = "slateblue4", 
@@ -308,24 +308,21 @@ Here we can see that our top 2 principal components, which explain roughly `r 10
 ## K-Means
 ```{r}
 # How many clusters are necessary? 4
-<<<<<<< HEAD
-<<<<<<< HEAD
 
-mtb_numeric <- mtb_no_null %>% select(-label)
+mtb_numeric <- mtb_no_null %>% 
+  select(-label)
 mtb_standard_scaled <- scale(mtb_numeric)
-=======
+
 mtb_numeric <- mtb_no_null %>% 
   select(-label)
->>>>>>> 3b90766b6aa84d2301b110ad3d48bc86af28ae3b
-=======
+
 mtb_numeric <- mtb_no_null %>% 
   select(-label)
->>>>>>> 3b90766b6aa84d2301b110ad3d48bc86af28ae3b
 
 clusters <- 1:10
 dists <- c()
 for (c in 1:10){
-  km <- kmeans(mtb_scaled_twice, centers=c, iter.max=1000)
+  km <- kmeans(mtb_standard_scaled, centers=c, iter.max=1000)
   dists <- c(dists, km$tot.withinss)
 }
 
@@ -433,13 +430,13 @@ mtb_gmm2 <- Mclust(mtb_standard_scaled)
 # mb3 = Mclust(iris[,-5], 3)
 
 # optimal selected model
-mtb_gmm2$modelName
+# mtb_gmm2$modelName
 
 # optimal number of cluster
-mtb_gmm2$G
+# mtb_gmm2$G
 
 # probality for an observation to be in a given cluster
-head(mtb_gmm2)
+# head(mtb_gmm2)
 
 # get probabilities, means, variances
 summary(mtb_gmm2, parameters = TRUE)
@@ -448,69 +445,14 @@ plot(mtb_gmm2, 'classification')
 
 ```
 
-
-## Gaussian Mixture Model (GMM)
-In this section, we'll take a more probabilistic model to our clustering. That is, we'll use a Guassian Mixture Model (GMM) to build out normally distributed subgroupings within our mountain bike dataset, where the densities of each of the subgroupings represents a probability that a bike belongs to that subgrouping. Unlike K-Means, which is a more centroid-based clustering method, GMM is more of a distribution-based clustering method.
-
-```{r gmm}
-p_load(ClusterR)
-
-# Build our GMM model
-mtb_gmm <- GMM(mtb_standard_scaled,
-               dist_mode = 'eucl_dist', # Distance metric to use during seeding of initial means clustering
-               seed_mode = 'random_subset', # How initial means are seeded prior to EM alg
-               km_iter = 10, # Num of iterations of K-Means alg
-               em_iter = 10, # Num of iterations of EM alg
-               verbose = T
-               )
-
-mtb_gmm_pred <- predict(mtb_gmm, mtb_standard_scaled)
-
-opt_gmm <- Optimal_Clusters_GMM(mtb_standard_scaled, 
-                               max_clusters = 20, 
-                               criterion = "BIC", 
-                               dist_mode = "eucl_dist", 
-                               seed_mode = "random_subset",
-                               km_iter = 10, 
-                               em_iter = 10, 
-                               var_floor = 1e-10, 
-                               plot_data = T)
-
-
-```
-
-Use the `mclust` package in R, which utilizes Bayesian Information Criterion (BIC) to optimize the number of clusters.
-```{r gmm2}
-p_load(mclust)
-
-mtb_gmm2 <- Mclust(mtb_standard_scaled)
-
-#or specify number of clusters
-# mb3 = Mclust(iris[,-5], 3)
-
-# optimal selected model
-mtb_gmm2$modelName
-
-# optimal number of cluster
-mtb_gmm2$G
-
-# probality for an observation to be in a given cluster
-head(mtb_gmm2)
-
-# get probabilities, means, variances
-summary(mtb_gmm2, parameters = TRUE)
-
-plot(mtb_gmm2, 'classification')
-
-```
 
 
 
 ## Multi-class SVM
 
 ```{r}
-library(e1071)
-library(caret)
+p_load(e1071,
+       caret)
 
 #convert all mountain category to enduro, dc -> Xc?
 remap <- function(x, num){
@@ -600,9 +542,6 @@ for (fold in folds){
 
 mean(accs_2pc)
 
-
-
-plot(pcsvm)
 
 dat <- data.frame(x=cbind(pca_2_scaled[,2], pca_2_scaled[,1]), y=labels)
 pcsvm <- svm(y~., data=dat)
