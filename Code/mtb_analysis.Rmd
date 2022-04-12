@@ -109,21 +109,93 @@ mtb_data %>%
 
 
 # EDA
+In this section, we'll take a look at the `r nrow(mtb_data)` mountain bikes in our dataset and some of the `r ncol(mtb_data)` features. We'll try to break down our understanding of the data in terms of `label`, our target variable that acts as the category for each mountain bike.
 
-```{r demographics_explore}
-DataExplorer::plot_bar(mtb_data, 
-                       ggtheme = theme_classic(),
-                       title = 'Distribution of Categorical Variables',
-                       theme_config = theme(plot.title = element_text(hjust = 0, 
-                                                                          color = "slateblue4", 
-                                                                          size = 24),
-                                                plot.subtitle = element_text(hjust = 0, color = "slateblue2", size = 10),
-                                                plot.caption = element_text(color = "dark gray", size = 10, face = "italic"),
-                                                axis.title.x = element_text(size = 14),
-                                                axis.title.y = element_text(size = 14)),
-                       maxcat = 10,
-                       ncol = 2)
+## Label (Mountainbike Category)
+As stated earlier, there are 5 mountain bike categories in our dataset:  
+1. Cross Country (xc)  
+2. Enduro (en)  
+3. Trail (tr)  
+4. All Mountain (am)  
+5. Downcountry (dc)  
 
+Let's look at how many of each we have in our dataset.
+
+```{r label_bar_plot}
+mtb_data %>% 
+  group_by(label) %>% 
+  tally() %>% 
+  arrange(desc(n)) %>% 
+  # Start our visualization, creating our groups by party affiliation
+  ggplot(aes(y = label, x = n)) +
+  geom_col(fill = "slateblue", na.rm = T) +
+  # Add a label by recreating our data build from earlier
+  geom_label(aes(label = n),
+             size = 5,
+             # Scooch the labels over a smidge
+             hjust = .25) +
+  # Let's change the names of the axes and title
+  xlab("Number of Bikes") +
+  ylab("Category (label)") +
+  labs(title = "Number of Mountain Bikes per Category")
+```
+
+We see that out of our `r nrow(mtb_data)` bikes, most of them are Trail bikes.
+
+## Categorical Variables
+
+There are 4 categorical variables we'll take a look at to better understand our data:  
+1. Setting  
+2. Size  
+3. Front Piston (`f_piston`)  
+4. Rear Piston (`r_piston`)  
+
+
+
+```{r categorical_vars}
+mtb_data %>% 
+  DataExplorer::plot_bar(ggtheme = theme_classic(),
+                         title = 'Distribution of Categorical Variables',
+                         theme_config = theme(plot.title = element_text(hjust = 0, 
+                                                                            color = "slateblue4", 
+                                                                            size = 24),
+                                                  plot.subtitle = element_text(hjust = 0, color = "slateblue2", size = 10),
+                                                  plot.caption = element_text(color = "dark gray", size = 10, face = "italic"),
+                                                  axis.title.x = element_text(size = 14),
+                                                  axis.title.y = element_text(size = 14)),
+                         maxcat = 15,
+                         ncol = 2)
+
+```
+- To the right, we see that most of the bikes don’t have a setting, which is used to help differentiate between different versions of the same bike.  
+- Most of the bikes being analyzed are trail bikes, with the smallest grouping of bikes being all mountain bikes.  
+- Most of the bikes analyzed have 4 rear/front pistons. The two variables seem to be perfectly in-sync, leading us to believe that they’re highly correlated. 
+
+```{r categorical_by_label}
+mtb_data %>% 
+  DataExplorer::plot_bar(ggtheme = theme_classic(),
+                         by = 'label',
+                         by_position = 'fill',
+                         title = 'Distribution of Categorical Variables',
+                         theme_config = theme(plot.title = element_text(hjust = 0, 
+                                                                            color = "slateblue4", 
+                                                                            size = 24),
+                                                  plot.subtitle = element_text(hjust = 0, color = "slateblue2", size = 10),
+                                                  plot.caption = element_text(color = "dark gray", size = 10, face = "italic"),
+                                                  axis.title.x = element_text(size = 14),
+                                                  axis.title.y = element_text(size = 14)),
+                         maxcat = 15,
+                         ncol = 2)
+```
+
+- Most of the bikes that have 2 pistons are Cross Country (*xc*) bikes.
+
+## Continuous Variables
+
+To analyze the continuous features within our dataset, we built density plots for each of them to better understand their distribution. 
+
+
+```{r continuous_vars}
 DataExplorer::plot_density(mtb_data,
                              ggtheme = theme_classic(),
                              title = 'Distribution of Continuous Variables',
@@ -138,7 +210,39 @@ DataExplorer::plot_density(mtb_data,
                              ncol = 3)
 ```
 
+### ~Normally Distributed Variables:
+- Chainstay_length  
+- Fork_travel  
+- Bb_height  
+- Seat_angle
 
+### Skewed Variables:  
+- Head_angle (skewed right)  
+- Handlebar_width (skewed left)  
+- Wheelbase (skewed left)
+
+
+### Multi-Modal Distributed Variables:
+- f_rotor_dim / r_rotor_dim  
+- Stem_length
+
+## Continuous Variables by Label
+```{r cont_by_label}
+mtb_data %>% 
+  DataExplorer::plot_boxplot(by = 'label',
+                             geom_boxplot_args = list('fill' = 'slateblue'),
+                           ggtheme = theme_classic(),
+                           theme_config = theme(plot.title = element_text(hjust = 0, 
+                                                                          color = "slateblue4", 
+                                                                          size = 24),
+                                                plot.subtitle = element_text(hjust = 0, color = "slateblue2", size = 10),
+                                                plot.caption = element_text(color = "dark gray", size = 10, face = "italic"),
+                                                axis.title.x = element_text(size = 14),
+                                                axis.title.y = element_text(size = 14)),
+                           ncol = 3)
+```
+
+Here we see...
 
 ## Average bikes by flip-chip setting
 ```{r setting}
@@ -299,9 +403,6 @@ ggbiplot(mtb_pca,
 ```
 
 Here we can see that our top 2 principal components, which explain roughly `r 100*round(mtb_pca_df %>% filter(variable == 'Cumulative Proportion') %>% select(PC2) %>% as.numeric(), 3)`% of the variation in our data, are already pretty good representations for describing the different components in our dataset. Even so, the groupings are distinctly plotted on the 2-D graph.
-
-# Rowdiness scale
-
 
 # Clustering
 
