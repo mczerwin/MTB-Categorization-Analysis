@@ -1,5 +1,5 @@
 ---
-title: "MTB Categorization Analysis"
+title: "Mountain Bike (MTB) Categorization Analysis"
 author: "Michael Czerwinski & Justin Schulberg"
 date: "12/29/2021"
 output:
@@ -56,6 +56,7 @@ theme_update(plot.title = element_text(hjust = 0, color = "slateblue4", size = 2
 
 # Introduction
 
+## Project Overview
 For this project, our team will determine whether the specifications of mountain bikes (MTB) are enough to differentiate between the different types of mountain bike categories.
 
 Currently, full suspension mountain bikes come in multiple categories:
@@ -72,14 +73,24 @@ With all of the factors to consider when designing a bike, there are no clear bo
 
 ![Various Dimension Features of a Bike's Geometry](Images/Bike_Diagram.png)
 
-Let's start by taking a look at the data.
+## The Data
+The data was retrieved manually from each of the mountain bike company's websites. Let's take a look at the data.
 
 ```{r read_data}
 # Read in sheet 2 of our data
 mtb_data <- read_excel(here::here('Data/mtb_stats.xlsx'), 'Sheet1')
 mtb_data <- mtb_data %>% 
   # Clean up the label column
-  mutate(label = str_replace_all(str_to_lower(label), '[:punct:]', ''))
+  mutate(label = str_replace_all(str_to_lower(label), '[:punct:]', ''),
+         # Create a feature for the long-version of the names
+         bike_category = case_when(
+          label == 'tr' ~ 'Trail',
+          label == 'xc' ~ 'Cross Country',
+          label == 'dc' ~ 'Downcountry',
+          label == 'am' ~ 'All Mountain',
+          label == 'en' ~ 'Enduro',
+          TRUE ~ 'red'
+        ))
 
 # Pull out the class labels
 labels <- mtb_data %>% 
@@ -125,11 +136,11 @@ Let's look at how many of each we have in our dataset.
 
 ```{r label_bar_plot}
 mtb_data %>% 
-  group_by(label) %>% 
+  group_by(bike_category) %>% 
   tally() %>% 
   arrange(desc(n)) %>% 
   # Start our visualization, creating our groups by party affiliation
-  ggplot(aes(y = forcats::fct_reorder(label, n), x = n)) +
+  ggplot(aes(y = forcats::fct_reorder(bike_category, n), x = n)) +
   geom_col(fill = "slateblue", na.rm = T) +
   # Add a label by recreating our data build from earlier
   geom_label(aes(label = n),
@@ -155,7 +166,7 @@ There are 4 categorical variables we'll take a look at to better understand our 
 
 ```{r categorical_vars}
 mtb_data %>% 
-  select(-label) %>% 
+  select(-label, -bike_category) %>% 
   DataExplorer::plot_bar(ggtheme = theme_classic(),
                          title = 'Distribution of Categorical Variables',
                          theme_config = theme(plot.title = element_text(hjust = 0, 
@@ -194,8 +205,8 @@ mtb_data %>%
 
 Here we see:\
 
-- The size used for most of the bikes is pretty evenly distributed. For the most part, we attempted to find bikes that are sized to the heights of the authors of this report (approx. 5'8"-5'11"), which tended to be Large-sized bikes; however, for some bikes, like Trail, the specific bike's company website from which we pulled the data recommended a Medium-sized bike.\
-- Although most of the bikes are 4-piston bikes, of the bikes that have 2 pistons, most are Cross Country (*xc*) bikes.
+-   The size used for most of the bikes is pretty evenly distributed. For the most part, we attempted to find bikes that are sized to the heights of the authors of this report (approx. 5'8"-5'11"), which tended to be Large-sized bikes; however, for some bikes, like Trail, the specific bike's company website from which we pulled the data recommended a Medium-sized bike.\
+-   Although most of the bikes are 4-piston bikes, of the bikes that have 2 pistons, most are Cross Country (*xc*) bikes.
 
 ## Continuous Variables
 
@@ -253,11 +264,12 @@ mtb_data %>%
 
 Here we see:\
 
-- Cross Country (*xc*) bikes tend to have the largest head angle and smallest seat angle compared to other bikes. They also have the largest stem length by a significant margin. Overall, Cross Country bikes tend to be the most differentiable from other bike categories;\
-- All Mountain (*am*) bikes have a significantly smaller standover height and, along with Enduro (*en*) bikes, have a much larger reach than other bike categories;\
-- As is generally expected, Trail (*tr*) bikes tend to fit mostly in the middle for most of these continuous' variables. This makes sense given that they tend to split the difference between Cross Country and Enduro bikes.
+-   Cross Country (*xc*) bikes tend to have the largest head angle and smallest seat angle compared to other bikes. They also have the largest stem length by a significant margin. Overall, Cross Country bikes tend to be the most differentiable from other bike categories;\
+-   All Mountain (*am*) bikes have a significantly smaller standover height and, along with Enduro (*en*) bikes, have a much larger reach than other bike categories;\
+-   As is generally expected, Trail (*tr*) bikes tend to fit mostly in the middle for most of these continuous' variables. This makes sense given that they tend to split the difference between Cross Country and Enduro bikes.
 
 ## Average bikes by flip-chip setting
+
 Because some bikes' websites would have two different "settings" for the same-sized bike, we opted to include both options and average the two together to get one middle-of-the-road estimate for that type of bike.
 
 ```{r setting}
@@ -295,8 +307,7 @@ rownames(new_mtb_data) <- new_mtb_data$model
 
 ```
 
-Because some bikes' websites would have two different "settings" for the same-sized bike, we opted to include both options and average the two together to get one middle-of-the-road estimate for that type of bike. We end up performing this operation for `r round(100*nrow(no_setting)/nrow(mtb_data), 0)`% of the bikes in our dataset.
-
+Because some bikes' websites would have two different "settings" for the same-sized bike, we opted to include both options and average the two together to get one middle-of-the-road estimate for that type of bike. We end up performing this operation for `r round(100*nrow(setting)/nrow(mtb_data), 0)`% of the bikes in our dataset.
 
 ------------------------------------------------------------------------
 
@@ -306,7 +317,8 @@ Now that we have a better understanding of our mountain bike dataset, we'll form
 
 > **Applying our own clustering algorithms will either give us a different set number of clusters (rather than the 5 pre-ordained categories) OR will not provide clearly defined clusters, leading us to believe that the bikes are actually created on a spectrum and cannot be grouped into one of the 5 pre-ordained categories.**
 
-Thus, we will apply various clustering and classification algorithms, including K-Means Clustering, Gaussian Mixture Models, and Multi-class Support Vector Machine, to disprove that 5 distinct categories of Mountain Bikes exist.
+To do so, we'll:\
+- Try to use various methods to reduce the featureset and see if there are certain variables that can better be used to differentiate between different mountain bike categories. - Apply various clustering and classification algorithms, including K-Means Clustering, Gaussian Mixture Models, and Multi-class Support Vector Machine, to disprove the notion that 5 distinct categories of Mountain Bikes exist.
 
 ------------------------------------------------------------------------
 
@@ -351,12 +363,12 @@ corrplot(mtb_correlation,
 
 ```
 
-Here we see some obvious correlations, for example:  
+Here we see some obvious correlations, for example:
 
-- `f_piston` (front brakes) is perfectly correlated with `r_piston` (rear brakes), which makes sense since mountain bikes tend to use the same types/spec of brakes for the front vs. rear tires.\
-- `fork_travel` has a correlation above .95 with: `r mtb_correlation_df %>% select(variable, fork_travel) %>% filter((fork_travel > .95) | (fork_travel < -.95)) %>% select(variable) %>% as.character()`. This make sense; for example, `rear_travel` *should* be highly correlated with `fork_travel`.
+-   `f_piston` (front brakes) is perfectly correlated with `r_piston` (rear brakes), which makes sense since mountain bikes tend to use the same types/spec of brakes for the front vs. rear tires.\
+-   `fork_travel` has a correlation above .95 with: `r mtb_correlation_df %>% select(variable, fork_travel) %>% filter((fork_travel > .95) | (fork_travel < -.95)) %>% select(variable) %>% as.character()`. This make sense; for example, `rear_travel` *should* be highly correlated with `fork_travel`.
 
-In all, here are the most highly correlated variables (i.e. variables which have a correlation above .95 or below -.95):
+In all, here are the most highly correlated variables (i.e. variables which have a correlation above .9 or below -.9):
 
 ```{r high_correlation}
 mtb_correlation_df %>% 
@@ -373,9 +385,9 @@ mtb_correlation_df %>%
 
 ```
 
-There are a lot! For now, we'll opt to include everything. But later on, as we analyze the importance of different features, we'll look to remove some of the above variables first.
+There are a lot, especially given that we only have `r mtb_data %>% select_if(is.numeric) %>% ncol()` continuous columns in our dataset! For now, we'll opt to include everything. But later on, as we analyze the importance of different features, we'll look to remove some of the above variables first.
 
-## 2. PCA
+## 2. Principal Component Analysis (PCA)
 
 Next, we'll apply PCA to our dataset. In so doing, we'll have to center and scale our data given how different the ranges are for certain measurements. Let's take a look at our 5 principal components which explain the largest proportion of variance in the data:
 
@@ -389,7 +401,6 @@ for (c in 1:ncol(new_mtb_data)){
   }
 }
 
-# TODO get average bikes by setting  to work above
 mtb_no_null <- new_mtb_data %>% 
                 select(-price) %>%
                 select_if(is.numeric) %>% 
@@ -415,19 +426,21 @@ mtb_pca_df %>%
   pivot_longer(-variable, 
                names_to = 'PC',
                names_prefix = 'PC') %>% 
+  # Make the principal component column an integer so ggplot orders it from 1:17 properly
   mutate(PC = as.integer(PC),
+         # Convert value to % (multiply by 100) so it's not a decimal
          value = 100*value) %>% 
   filter(variable == 'Proportion of Variance') %>% 
   ggplot(aes(x = PC, y = value)) +
-  geom_point(size = 3, color = 'slateblue') +
-  geom_line(alpha = .6, lwd = 1, color = 'slateblue') + 
+  geom_point(size = 4, color = 'slateblue') +
+  geom_line(alpha = .6, lwd = 2, color = 'slateblue') + 
   labs(title = 'Proportion of Variance Explained by Principal Components',
        x = 'Principal Component',
        y = 'Proportion of Variance (%)')
 
 ```
 
-We can see that, actually, that our $1^{st}$ principal component alone explains more than half our data. After that, we have a huge drop-off. Starting at our $5^{\text{th}}$ principal component, nearly `r 100*round(mtb_pca_df %>% filter(variable == 'Cumulative Proportion') %>% select(PC5) %>% as.numeric(), 3)`% of the data's variation is properly explained. 
+We can see that, actually, that our 1^st^ principal component alone explains more than half our data. Starting at the 2^nd^ principal component, there's a distinguishable elbow point. After that, we have a huge drop-off. Starting at our 5^th^ principal component, nearly `r 100*round(mtb_pca_df %>% filter(variable == 'Cumulative Proportion') %>% select(PC5) %>% as.numeric(), 3)`% of the data's variation is properly explained. This leads us to believe that the majority of the variation in our data can be explained by using just 1 principal component!
 
 Let's take a look at how our top 2 principal components explain the 5 different mountain bike categories:
 
@@ -454,6 +467,8 @@ Here we can see that our top 2 principal components, which explain roughly `r 10
 ------------------------------------------------------------------------
 
 # Clustering
+
+Because we are investigating the validity of mountain bike categories, one approach is to treat this dataset as unsupervised, stripping the bikes of their `label` and seeing if various clustering algorithms can re-create the 5 distinct `label`s.
 
 ## K-Means
 
@@ -484,8 +499,8 @@ for (c in 1:10){
 tibble(clusters = clusters,
        dists = dists) %>% 
   ggplot(aes(x = clusters, y = dists)) + 
-  geom_point(size = 3, alpha = .9, color = 'slateblue') +
-  geom_line(size = 2, alpha = 1, color = 'slateblue1') + 
+  geom_point(size = 4, color = 'slateblue') +
+  geom_line(alpha = .6, lwd = 2, color = 'slateblue') + 
   labs(title = "K-Means Clustering of MTB Data",
        subtitle = 'Method uses `tot.withinss` parameter to measure distances.',
        x = 'Clusters',
@@ -495,8 +510,6 @@ tibble(clusters = clusters,
 
 ```{r}
 # Let's see where these clusters would end up on the 2D PCA plot
-
-
 mtb_pca_scaled <- prcomp(mtb_standard_scaled,
                   center = F,
                   scale. = F)
@@ -505,40 +518,56 @@ pca_2_scaled <- as.matrix(mtb_standard_scaled) %*% as.matrix(mtb_pca_scaled$rota
 
 pca_km_scaled <- kmeans(pca_2_scaled, centers=3, iter.max=1000)
 
-#Something's not working here, definitely hitting a local min or something
-colorgroups <- function(g){
-  if (g == 'tr' || g == 'Trail'){
-    return('blue')
-  }
-  else if (g == 'xc' || g == 'Cross Country'){
-    return('pink')
-  }
-  else if (g == 'dc' || g == 'Downcountry'){
-    return('darkgoldenrod3')
-  }
-  else if (g == 'am' || g == 'All Mountain'){
-    return('red')
-  }
-  else if (g == 'en' || g == 'Enduro'){
-    return('green')
-  }
-}
-catNames <- c('Cross Country', 'Downcountry', 'Trail', 'All Mountain', 'Enduro')
-cols <- unlist(lapply(new_mtb_data$label, colorgroups))
 
-unlist(lapply(catNames, colorgroups))
-# jpeg('../Images/PCA_clusters.jpg')
-plot(pca_2_scaled, col=cols)
-points(pca_km_scaled$centers, col = 'slateblue4', pch = 'x', cex = 1.5)
-# text(pca_2_scaled[,1], pca_2_scaled[,2], rownames(pca_2_scaled))
-legend("bottomleft", legend= c(catNames, 'Cluster Center'), col=c(unlist(lapply(catNames, colorgroups)), 'black'), pch=c(rep('o', 5), 'X'))
+# Bring our PCA and k-means clusters results into our dataset
+new_mtb_data %>% 
+  bind_cols(pca_2_scaled) %>% 
+  mutate(# Create a feature for the long-version of the names
+         bike_category = case_when(
+          label == 'tr' ~ 'Trail',
+          label == 'xc' ~ 'Cross Country',
+          label == 'dc' ~ 'Downcountry',
+          label == 'am' ~ 'All Mountain',
+          label == 'en' ~ 'Enduro',
+          TRUE ~ 'red'
+        ),
+        # Bring our clusters in as a factor
+        cluster = as.factor(pca_km_scaled$cluster)) %>% 
+  # GG-plot our shit
+  ggplot() +
+    geom_point(aes(x = PC1, 
+                   y = PC2, 
+                   color = cluster, 
+                   shape = bike_category), 
+               alpha = .9, 
+               size = 3) +
+    # Add our cluster centers in as well
+    geom_point(data = as_tibble(pca_km_scaled$centers) %>%
+                 mutate(cluster = as.factor(c(1, 2, 3))), 
+               aes(x = PC1, 
+                   y = PC2,
+                   color = cluster), 
+               shape = 10, 
+               size = 7) + 
+  # Color clusters accordingly
+    scale_color_manual(values = c('slateblue4', 'gray', 'slateblue1'), name = 'Cluster') +
+    labs(title = "K-Means Clustering of MTB Principal Components",
+       subtitle = 'Clusters denoted by color;\nBike categories denoted by shape;\nCluster centers denoted by large cross-hairs shape.',
+       x = 'Principal Component 1',
+       y = 'Principal Component 2')
+
 
 #TODO let's look at this bottom cluster - both Niner bikes
-#Niner has low reach numbers on its bikes - could be because we used the Medium for these!
-#Based on PCA mapping, the blur tr, expic, Exie, Ripley, and Element all have less chainstay length, and less pistons?? wow, should we exclude piston count?? with more 2 piston bikes getting added, it evens out the average, so these aren't showing up as much anymore
-
+# Niner has low reach numbers on its bikes - could be because we used the Medium for these!
+# Based on PCA mapping, the blur tr, expic, Exie, Ripley, and Element all have less chainstay length, and less pistons?? wow, should we exclude piston count?? with more 2 piston bikes getting added, it evens out the average, so these aren't showing up as much anymore
 
 ```
+
+Above, we attempted to graph the 3 clusters created for the top 2 principal components in our data. For example, we can see Cluster #1 on the left-hand side of the chart, mostly composed of Cross Country bikes (diamonds in the chart) and some Downcountry bikes (denoted by squares). Downcountry bikes also seem to be part of Cluster #2 (gray points), along with Trail bikes (denoted by squares with an 'x' in them). However, Trail bikes also feature heavily in Cluster #3 along with Enduro bikes (denoted by '+').
+
+Overall, it's clear that there is significant overlap between our Clusters, mainly along the Principal Component 1 axis; lending credence to the notion that our bikes can be differentiated along a single, continuous scale.
+
+*Note: In the bottom-left of the graph (`PC2 < -4`), we see two Niner bikes, almost acting as outliers. Niner has low reach numbers on its bikes, which could be because we used the Medium size for these rather than the Large size!*
 
 ## Gaussian Mixture Model (GMM)
 
