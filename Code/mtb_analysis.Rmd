@@ -611,7 +611,7 @@ p_load(mclust)
 
 mtb_gmm2 <- Mclust(mtb_standard_scaled)
 
-#or specify number of clusters
+#or specify number of clusters testing push
 # mb3 = Mclust(iris[,-5], 3)
 
 # optimal selected model
