@@ -618,7 +618,9 @@ plot(pcsvm, dat)
 # Blue -> true TR
 # Green -> true EN
                   
+?svm()
 
+SVM using radial basis functoin
 ```
 
 
