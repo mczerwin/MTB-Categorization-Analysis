@@ -626,9 +626,9 @@ mtb_gmm2 <- Mclust(mtb_standard_scaled)
 # head(mtb_gmm2)
 
 # get probabilities, means, variances
-summary(mtb_gmm2, parameters = TRUE)
+# summary(mtb_gmm2, parameters = TRUE)
 
-plot(mtb_gmm2, 'classification')
+# plot(mtb_gmm2, 'classification')
 
 ```
 
@@ -666,7 +666,7 @@ remap <- function(x, num){
       return('Enduro')
     }
   }
-  else if(x=='xc' || x=='dc'){
+  else if(x=='xc'){
     if(num){
       return(1)
     }
@@ -674,14 +674,14 @@ remap <- function(x, num){
       return('Cross Country')
     }
   }
-  # else if(x=='dc'){
-  #   if(num){
-  #     return(2)
-  #   }
-  #   else{
-  #     return('Downcountry')
-  #   }
-  # }
+  else if(x=='dc'){
+    if(num){
+      return(2)
+    }
+    else{
+      return('Downcountry')
+    }
+  }
   else if(x=='tr'){
     if(num){
       return(3)
@@ -740,8 +740,8 @@ gammas <- 10^gammas
 
 
 #Change these below
-# X = pca_2_scaled
-X = mtb_standard_scaled
+X = pca_2_scaled
+# X = mtb_standard_scaled
 y = labels
 
 results <- matrix(ncol=3, nrow=0)
@@ -774,15 +774,15 @@ for (k in kernels){
   }
 }
 
-results <- data.frame(results)
-results$acc <- as.numeric(results$acc)
-results$gamma <- as.numeric(results$gamma)
-results[which.max(results$acc), ]
-
-
-nonlinear_svm <- results[-(results$kernel=='linear'), ]
-
-nonlinear_svm[which.max(nonlinear_svm$acc), ]
+# results <- data.frame(results)
+# results$acc <- as.numeric(results$acc)
+# results$gamma <- as.numeric(results$gamma)
+# results[which.max(results$acc), ]
+# 
+# 
+# nonlinear_svm <- results[-(results$kernel=='linear'), ]
+# 
+# nonlinear_svm[which.max(nonlinear_svm$acc), ]
 # On two axis, the best svm model is linear
 
 ```
@@ -818,14 +818,42 @@ An interesting observation is that most of the boundary lines are more or less v
 
 ```{r}
 # DC as XC, using Linear
-pcsvm2 <- svm(x=pca_2_scaled, y=labels, kernel='linear')
+remap2 <- function(x, num){
+  if (x=='am' || x=='en'){
+    if (num){
+      return(4)
+    }
+    else{
+      return('Enduro')
+    }
+  }
+  else if(x=='xc' || x=='dc'){
+    if(num){
+      return(1)
+    }
+    else{
+      return('Cross Country')
+    }
+  }
+  else if(x=='tr'){
+    if(num){
+      return(3)
+    }
+    else{
+      return('Trail')
+    }
+  }
+}
+labels2 <- as.factor(unlist(lapply(new_mtb_data$label, remap2, F)))
+
+pcsvm2 <- svm(x=pca_2_scaled, y=labels2, kernel='linear')
 
 preds2 <- predict(pcsvm2, grid)
 df2 <- data.frame(grid, preds2)
 
 ggplot(df2, aes(x = PC1, y = PC2)) + 
   geom_tile(aes(fill=preds2)) +
-  geom_point(data = dat, aes(shape = labels), size = 2) + 
+  geom_point(data = dat, aes(shape = labels2), size = 2) + 
   labs(title = "Support Vector Machine Classification",
          x = 'Principal Component 1',
          y = 'Principal Component 2')
@@ -890,6 +918,7 @@ Mapping the Revel Ranger to its first Principal Component we get a value of 1.7 
 # # Get PC 1
 # 
 # round(mtb_standard_scaled['ranger', ] %*% as.matrix(mtb_pca_scaled$rotation[,1]),2)
+# pca_2_scaled
 ```
 
 
@@ -897,8 +926,22 @@ Mapping the Revel Ranger to its first Principal Component we get a value of 1.7 
 
 There are a few opportunities to improve the analysis included in this presentation and forthcoming report:
 
--   **Inclusion of more bikes (rows)** \| More rows = more robust clustering algorithms.
+-   **Inclusion of more bikes (rows)** \| The most obvious improvement we can make is to add more data points to our dataset. . Each individual bike was manually entered by one of us. After most major bike brands we had enough data to accurately visualize different bike categories, however with more bikes our algorithms will become more robust and less affected by the presence of outliers
 
 -   **Inclusion of more bike features (columns)** \| Although we included the most meaningful specs/geometry of the bikes analyzed, there are dozens of other, smaller features that can be used to help differentiate between different types of bikes.
 
 -   **Include all sizes of bikes** \| We chose to use the size that corresponded to a 5'10" rider, but some bike manufacturers could interpret this as a Medium and others a Large.
+
+-   **Include bikes across multiple years** \| As bike trends slowly change, it'd be interesting to see how the data shifts across time. For example, the Rocky Mountain Element reduced its head angle from 70 degrees to 65.8 in one iteration of the bike. Including data from past years could provide valueable market insights into how the industry as a whole is moving.
+
+## Lesons Learned
+
+As both authors of this repot are in the midst of the OMSA program, we feel that it provided reinforcement on  previously seen topics as well as good introductions to net new topics. I think this course was a great complement to ISYE6470, Computational Data Analytics. CDA seemed more theory focused, e.g. requiring us to build ML algorithms from scratch, while this course seemed more practical focused, e.g. HW 5 allowing us to use any dataset of our choice.Additionally, I think this course was a good couse to take concurrently with Data Visual Analytics, as it also required the use of Random Forests, and provided a good introduction to data analysis techniques that are standard across any project (e.g. cross validation).
+
+
+
+## Course Suggestions
+
+This course was a good introduction for practical applications. One area improvement I would like to see would be to require more fundamental knowledge checks for some material. More specifically, I think the topics around Information Criterion and Discriminant analysis were glossed over too quickly. This course was my first exposure to those topics, so I'm not sure if they were intentionally light on the material since they are not used in industry as much. Additionally, I think the assignments in this course could have been more clear, however, I also think this could have been intentional to mimic the ambiguity of working in industry.
+
+
