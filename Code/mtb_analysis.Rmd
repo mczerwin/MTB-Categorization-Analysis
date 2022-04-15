@@ -67,7 +67,8 @@ Currently, full suspension mountain bikes come in multiple categories:
 -   **All Mountain (AM)** \| A more niche category which some manufacturers claim to be more downhill focused than trail bikes, but not designed for downhill races like Enduro bikes are
 -   **Downcountry (DC)** \| A relatively new category between XC and Trail. Similar to the All Mountain category, these bikes aren't race specific like XC bikes tend to be, but are lighter and faster than trail bikes.
 
-With all of the factors to consider when designing a bike, there are no clear boundaries between these categories. For example, one brand's Downcountry bike could be what another brand considers a Trail bike.
+With all of the factors to consider when designing a bike, there are no clear boundaries between these categories. For example, one brand's Downcountry bike could be what another brand considers a Trail bike. The popular mountain biking website PinkBike has done in depth analyses of many bikes across all categories, and the topic as to which category bikes fall in and how many categories is too many often comes up, as seen in the video [here](https://www.youtube.com/watch?v=JYQJbymyG6k&ab_channel=Pinkbike). 
+
 
 **The goal of our project is to determine how many, if any, discrete categories should exist for mountain bikes.** Since most specifications and geometric measurements have one direction when moving across the spectrum of bikes, it's reasonable to believe that these measurements could be reduced to much fewer dimensions, and perhaps even one continuous principle component rather than discrete categories. Here is a diagram of some of the different types of geometric specifications on mountain bikes:
 
@@ -181,7 +182,7 @@ mtb_data %>%
 
 ```
 
--   We see that most of the bikes don't have a setting, which is used to help differentiate between different versions of the same bike. Later on, we'll group by settings for the same bike and average the results to get a more accurate representation of the bikes' specs.\
+-   We see that only few bikes have a setting value, which is a feature that allows a rider to slightly adjust the frame's geometry to hone in rider comfort. Later on, we'll group by settings for the same bike and average the results to get a more accurate representation of the bikes' specs.\
 -   Most of the bikes analyzed have 4 rear/front pistons. The two variables seem to be perfectly in-sync, leading us to believe that they're highly correlated.
 
 But, really, we care about understanding how these different variables interact with our target variable, `label`. Let's look at their distribution and look for any patterns.
@@ -206,7 +207,7 @@ mtb_data %>%
 Here we see:\
 
 -   The size used for most of the bikes is pretty evenly distributed. For the most part, we attempted to find bikes that are sized to the heights of the authors of this report (approx. 5'8"-5'11"), which tended to be Large-sized bikes; however, for some bikes, like Trail, the specific bike's company website from which we pulled the data recommended a Medium-sized bike.\
--   Although most of the bikes are 4-piston bikes, of the bikes that have 2 pistons, most are Cross Country (*xc*) bikes.
+-   Although most of the bikes have 4-piston brakes, of the bikes that have 2 pistons, most are Cross Country (*xc*) bikes. 4-piston brakes are known to have higher stopping power which is more important the more the rider intends to ride downhill. However, they come at the cost of additional weight, which most XC riders will avoid at all costs.
 
 ## Continuous Variables
 
@@ -304,7 +305,8 @@ new_mtb_data <- data.frame(rbind(mean_by_setting, no_setting))
 
 rownames(new_mtb_data) <- new_mtb_data$model
 
-
+rm(no_setting)
+rm(mean_by_setting)
 ```
 
 Because some bikes' websites would have two different "settings" for the same-sized bike, we opted to include both options and average the two together to get one middle-of-the-road estimate for that type of bike. We end up performing this operation for `r round(100*nrow(setting)/nrow(mtb_data), 0)`% of the bikes in our dataset.
@@ -411,9 +413,9 @@ mtb_pca <- prcomp(mtb_no_null %>% select(-label),
                   center = TRUE,
                   scale. = TRUE)
 
-# Put our summary results into a dataframe
+# Put our summary results into a dataframe - Justin switching this to cbind() works for me, not sure why
 mtb_pca_df <- tibble(variable = c('Standard Deviation', 'Proportion of Variance', 'Cumulative Proportion')) %>% 
-  bind_cols(summary(mtb_pca)$importance)
+  cbind(summary(mtb_pca)$importance)
 
 
 mtb_pca_df %>% 
@@ -473,7 +475,7 @@ Because we are investigating the validity of mountain bike categories, one appro
 ## K-Means
 
 ```{r}
-# How many clusters are necessary? 4
+# How many clusters are necessary? 4?
 
 mtb_numeric <- mtb_no_null %>% 
   select(-label)
@@ -521,7 +523,7 @@ pca_km_scaled <- kmeans(pca_2_scaled, centers=3, iter.max=1000)
 
 # Bring our PCA and k-means clusters results into our dataset
 new_mtb_data %>% 
-  bind_cols(pca_2_scaled) %>% 
+  cbind(pca_2_scaled) %>% 
   mutate(# Create a feature for the long-version of the names
          bike_category = case_when(
           label == 'tr' ~ 'Trail',
@@ -533,7 +535,7 @@ new_mtb_data %>%
         ),
         # Bring our clusters in as a factor
         cluster = as.factor(pca_km_scaled$cluster)) %>% 
-  # GG-plot our shit
+  # GG-plot our shit - lol
   ggplot() +
     geom_point(aes(x = PC1, 
                    y = PC2, 
@@ -552,7 +554,7 @@ new_mtb_data %>%
   # Color clusters accordingly
     scale_color_manual(values = c('slateblue4', 'gray', 'slateblue1'), name = 'Cluster') +
     labs(title = "K-Means Clustering of MTB Principal Components",
-       subtitle = 'Clusters denoted by color;\nBike categories denoted by shape;\nCluster centers denoted by large cross-hairs shape.',
+       subtitle = 'Assigned clusters denoted by color;\nBike categories denoted by shape;\nCluster centers denoted by large cross-hairs shape.',
        x = 'Principal Component 1',
        y = 'Principal Component 2')
 
@@ -563,11 +565,11 @@ new_mtb_data %>%
 
 ```
 
-Above, we attempted to graph the 3 clusters created for the top 2 principal components in our data. For example, we can see Cluster #1 on the left-hand side of the chart, mostly composed of Cross Country bikes (diamonds in the chart) and some Downcountry bikes (denoted by squares). Downcountry bikes also seem to be part of Cluster #2 (gray points), along with Trail bikes (denoted by squares with an 'x' in them). However, Trail bikes also feature heavily in Cluster #3 along with Enduro bikes (denoted by '+').
+Above, we attempted to graph the 3 clusters created using top 2 principal components in our data. For example, we can see Cluster #1 on the right-hand side of the chart, mostly composed of Cross Country bikes (diamonds in the chart) and some Downcountry bikes (denoted by squares). Downcountry bikes also seem to be part of Cluster #2 (gray points), along with Trail bikes (denoted by squares with an 'x' in them) and some Enduro bikes (denoted by '+'). However, Trail bikes also feature heavily in Cluster #3 along with most of the Enduro bikes.
 
 Overall, it's clear that there is significant overlap between our Clusters, mainly along the Principal Component 1 axis; lending credence to the notion that our bikes can be differentiated along a single, continuous scale.
 
-*Note: In the bottom-left of the graph (`PC2 < -4`), we see two Niner bikes, almost acting as outliers. Niner has low reach numbers on its bikes, which could be because we used the Medium size for these rather than the Large size!*
+*Note: In the bottom-right of the graph (`PC2 < -4`), we see two Niner bikes, almost acting as outliers. For a 5'10" rider Niner suggests a size Medium, which results in low reach numbers on its bikes. From Figure X, we see that Reach heavily corresponds with PC2, and thus these bikes appear lower on the visual.*
 
 ## Gaussian Mixture Model (GMM)
 
@@ -611,7 +613,7 @@ p_load(mclust)
 
 mtb_gmm2 <- Mclust(mtb_standard_scaled)
 
-#or specify number of clusters testing push
+#or specify number of clusters 
 # mb3 = Mclust(iris[,-5], 3)
 
 # optimal selected model
@@ -632,6 +634,24 @@ plot(mtb_gmm2, 'classification')
 
 ## Multi-class SVM
 
+
+If we were to treat our labels as truth, then we can approach this analysis as a supervised learning model. For this section, we chose to group the All Mountain Category in with Enduro, since it was completely overlapped on the PCA chart above. We also chose to switch around the categorization of the Downcountry category, leaving it as a separate category and grouping it with both Trail and XC to experiment with the results of the model. 
+
+
+We chose to use a Multi-Class Support Vector Machine, and a grid search to tune the kernel functions and $\gamma$ values. For each set of parameters, we used K-fold cross validation with k=10 on all rows of the data. We decided against holding out data as a test set since we have such limited data, and the K-fold CV should evaluate the model's performance on blind data. 
+
+
+Using all of the data, the best SVM model was 73% accurate, using a Radial Basis kernel function with $\gamma=2.595024$
+
+
+Treating the Downcountry category as XC, the best model was 81.6% accurate, with a Radial Basis kernel function with $\gamma=0.02983647$
+
+
+Treating the Downcountry category as Trail, the best model was 80.0% accurate with a Radial Basis kernel function with $\gamma=3.764936$
+
+Of course, grouping this category with one of its adjacent categories we expect to see an increase in performance, but this could suggest that the Downcountry category is slightly more skewed towards the XC bikes. 
+
+
 ```{r}
 p_load(e1071,
        caret)
@@ -646,7 +666,7 @@ remap <- function(x, num){
       return('Enduro')
     }
   }
-  else if(x=='xc'){
+  else if(x=='xc' || x=='dc'){
     if(num){
       return(1)
     }
@@ -654,14 +674,14 @@ remap <- function(x, num){
       return('Cross Country')
     }
   }
-  else if(x=='dc'){
-    if(num){
-      return(2)
-    }
-    else{
-      return('Downcountry')
-    }
-  }
+  # else if(x=='dc'){
+  #   if(num){
+  #     return(2)
+  #   }
+  #   else{
+  #     return('Downcountry')
+  #   }
+  # }
   else if(x=='tr'){
     if(num){
       return(3)
@@ -672,19 +692,26 @@ remap <- function(x, num){
   }
 }
 labels <- as.factor(unlist(lapply(new_mtb_data$label, remap, F)))
-n <- length(labels)
-test_idx <- sort(sample(1:n, round(n/5)))
 
-Xtest <- mtb_standard_scaled[test_idx, ]
-Xtrain <-  mtb_standard_scaled[-test_idx, ]
 
-trainSVM <- function(x, y, idx){
+trainSVM <- function(x, y, idx, k='radial basis', g=0){
   xtest <- x[idx,]
   xtrain <- x[-idx,]
   ytest <- y[idx]
   ytrain <- y[-idx]
   
-  clf <- svm(x=xtrain, y=ytrain)
+  if(k=='linearl'){
+    clf <- svm(x=xtrain, y=ytrain, kernel=k)
+  }
+  else{
+    if (g==0){
+      clf <- svm(x=xtrain, y=ytrain, kernel=k)
+    }
+    else{
+      clf <- svm(x=xtrain, y=ytrain, kernel=k, gamma=g)
+    }
+  }
+  
   preds <- predict(clf, xtest)
   
   acc <- 0
@@ -695,53 +722,118 @@ trainSVM <- function(x, y, idx){
   return(acc/sum(cm))
 }
 
-folds <- createFolds(labels, k=10)
 
-accs <- c()
 
-for (fold in folds){
-  acc <- trainSVM(mtb_standard_scaled, labels, fold)
-  accs <- c(accs, acc)
-}
-
-mean(accs)
-
-# Roughly 60% accuracy when treating down country as separate category
-# But - roughly 77% accuracy when treating down country as XC, only 65% accuracy when treating downcountry as trail, suggests that downcountry bikes are more akin to XC than they are trail
+# Roughly 66.6% accuracy when treating down country as separate category
+# But - roughly 68.8% accuracy when treating down country as XC, only 69% accuracy when treating downcountry as trail, suggests that downcountry bikes are more akin to trail than they are XC
 ```
 
 ```{r}
 
 folds <- createFolds(labels, k=10)
 
-accs_2pc <- c()
 
-for (fold in folds){
-  acc <- trainSVM(pca_2_scaled, labels, fold)
-  accs_2pc <- c(accs, acc)
+#Grid Search for SVM
+kernels <- c('linear', 'polynomial', 'radial', 'sigmoid')
+gammas <- seq(-5, 3, length.out=100)
+gammas <- 10^gammas
+
+
+#Change these below
+# X = pca_2_scaled
+X = mtb_standard_scaled
+y = labels
+
+results <- matrix(ncol=3, nrow=0)
+colnames(results) <- c('acc', 'kernel', 'gamma')
+
+for (k in kernels){
+  if (k=='linear'){
+    
+    folds <- createFolds(labels, k=10)
+    accs <- c()
+    for (fold in folds){
+      # print('here')
+      acc <- trainSVM(X, y, fold, k='linear', g=0)
+      accs <- c(accs, acc)
+    }
+    results <- rbind(results, c(mean(accs), k, 0))
+  }
+  else{
+    for (g in gammas){
+      # print('choosing gamma')
+      # print(k)
+      folds <- createFolds(labels, k=10)
+      accs <- c()
+      for (fold in folds){
+        acc <- trainSVM(pca_2_scaled, labels, fold, k=k, g=0)
+        accs <- c(accs, acc)
+      }
+    results <- rbind(results, c(mean(accs), k, g))
+    }
+  }
 }
 
-mean(accs_2pc)
+results <- data.frame(results)
+results$acc <- as.numeric(results$acc)
+results$gamma <- as.numeric(results$gamma)
+results[which.max(results$acc), ]
 
 
-dat <- data.frame(x=cbind(pca_2_scaled[,2], pca_2_scaled[,1]), y=labels)
-pcsvm <- svm(y~., data=dat)
+nonlinear_svm <- results[-(results$kernel=='linear'), ]
 
-# jpeg('roughSVM.jpg')
-plot(pcsvm, dat)
+nonlinear_svm[which.max(nonlinear_svm$acc), ]
+# On two axis, the best svm model is linear
 
-
-# circle -> correctly predicted
-# X -> incorrectly predicted
-# black -> true XC
-# Red -> true DC
-# Blue -> true TR
-# Green -> true EN
-                  
-?svm()
-
-SVM using radial basis functoin
 ```
+
+
+To visualize the SVM, we again mapped all features to the 2 Principal Components. In this scenario, we actually acheived a higher accuracy of 75% using a linear kernel, again treating the Downcountry category as its own distinct category. 
+
+
+```{r}
+## This cell only to visualize linear kernel
+pcsvm <- svm(x=pca_2_scaled, y=labels, kernel='linear', gamma=0.2782559	)
+
+dat <- data.frame(pca_2_scaled)
+
+grid <- expand.grid(seq(min(dat[, 1]),max(dat[,1]),length.out=100),seq(min(dat[,2]),max(dat[,2]),length.out=100)) 
+names(grid) <- names(dat)[1:2]
+preds <- predict(pcsvm, grid)
+df <- data.frame(grid, preds)
+
+ggplot(df, aes(x = PC1, y = PC2)) + 
+  geom_tile(aes(fill=preds)) +
+  geom_point(data = dat, aes(shape = labels), size = 2) + 
+  labs(title = "Support Vector Machine Classification",
+         x = 'Principal Component 1',
+         y = 'Principal Component 2')
+
+```
+
+
+An interesting observation is that most of the boundary lines are more or less vertical, suggesting that most of the variation between classes is along Principal Component 1. We see this deviate between the XC and Downcountry boundary, however the validity of this boundary is still in question since the Downcountry category itself is more or less unofficial.
+
+
+
+```{r}
+# DC as XC, using Linear
+pcsvm2 <- svm(x=pca_2_scaled, y=labels, kernel='linear')
+
+preds2 <- predict(pcsvm2, grid)
+df2 <- data.frame(grid, preds2)
+
+ggplot(df2, aes(x = PC1, y = PC2)) + 
+  geom_tile(aes(fill=preds2)) +
+  geom_point(data = dat, aes(shape = labels), size = 2) + 
+  labs(title = "Support Vector Machine Classification",
+         x = 'Principal Component 1',
+         y = 'Principal Component 2')
+
+```
+ Mapping all Downcountry bikes to XC, the boundaries become almost entirely vertical, again suggesting that the classification of bikes can be attributed to Principal Component 1. 
+
+
 
 ------------------------------------------------------------------------
 
@@ -754,6 +846,52 @@ SVM using radial basis functoin
 -   The categorization of a mountain bike should be treated as a continuous scale, with Cross Country bikes on one end and Enduro bikes on another.
 
 -   To obtain where a specific bike lies on this scale, one can use the linear combination of the bike's specifications and the first principle component.
+
+-   This new spectrum of mapping bikes can provide bike manufacturers and consumers quantify how a bike will handle. 
+
+
+Let's look at an example from the data above. Some bike companies, like Transition and Revel, do not explicitly categorize their bikes like others do. For these brands, we categorized them based on general attributes, as well as media coverage of them. 
+
+| Rear Travel | Fork Travel | Front Piston | Front Rotor Diameter | Rear Piston | Rear Rotor Diameter | Head Angle | Seat Angle | Crank Length | Stem Length | Handlebar Width | Reach | Stack | Wheelbase | Chainstay Length | Bottom Bracket Height | Standover Height | 
+| -- | -- | -- | -- | -- | -- |-- | -- | -- |-- | -- | -- |-- | -- | -- |-- | -- |
+| 115 | 120 | 2 | 180 | 2 | 160 | 67.5 | 75.3 | 170 | 40 | 780 | 473 | 619 | 1194 | 436 | 338 | 699 |
+
+
+
+Converting to an input vector: 
+$$ \text{Ranger} = \begin{bmatrix}  115 \\ 120 \\ 2 \\ 180 \\ 2 \\ 160 \\ 67.5 \\ 75.3 \\ 170 \\ 40 \\ 780 \\ 473 \\ 619 \\ 1194 \\ 436 \\ 338 \\ 699 \end{bmatrix} \rightarrow \text{   Ranger (scaled)} = \begin{bmatrix}    -0.61 \\ -0.80 \\   -1.68  \\ -0.53  \\ -1.68 \\ -1.30 \\  0.79  \\ -0.39  \\ -0.40 \\-1.15 \\-0.11 \\0.60 \\0.16 \\-0.33 \\0.16 \\-0.16 \\  -1.01 \end{bmatrix} \text{and PC1}=\begin{bmatrix} -0.31 \\  -0.31
+        \\ -0.23 \\
+      -0.26\\
+         -0.23\\
+      -0.27\\
+        0.30\\
+       -0.26\\
+     -0.01\\
+       0.24\\
+  -0.27\\
+            -0.17\\
+            -0.26\\
+        -0.30\\
+ -0.13\\
+        -0.25\\
+  0.08\end{bmatrix}$$
+  
+$$ \text{Ranger} \times \text{PC1} = 1.7$$
+
+Mapping the Revel Ranger to its first Principal Component we get a value of 1.7 which puts us right around the boundary between Trail and XC, which lines up with the PinkBike editors' labelling of Downcountry in the video linked above.  
+
+```{r}
+# #Get Ranger stats
+# mtb_numeric['ranger',]
+# 
+# # Get Scaled Ranger
+# length(mtb_standard_scaled['ranger', ])
+# length(as.matrix(mtb_pca_scaled$rotation[,1]))
+# # Get PC 1
+# 
+# round(mtb_standard_scaled['ranger', ] %*% as.matrix(mtb_pca_scaled$rotation[,1]),2)
+```
+
 
 ## Opportunities for Improved Analysis
 
