@@ -936,16 +936,6 @@ ggplot(df2, aes(x = PC1, y = PC2)) +
          x = 'Principal Component 1',
          y = 'Principal Component 2')
 
-ggplot(df, aes(x = PC1, y = PC2)) + 
-  geom_tile(aes(fill = preds), alpha = .2) +
-    scale_fill_manual(values = c('slateblue4', 'gray', 'slateblue1', 'green', 'red')) +
-  geom_point(data = dat, aes(shape = labels, color = labels), size = 2) + 
-  scale_color_manual(values = c('slateblue4', 'gray', 'slateblue1', 'green', 'red')) +
-  labs(title = "Support Vector Machine Classification",
-         x = 'Principal Component 1',
-         y = 'Principal Component 2')
-
-
 ```
  Mapping all Downcountry bikes to XC, the boundaries become almost entirely vertical, again suggesting that the classification of bikes can be attributed to Principal Component 1. 
 
