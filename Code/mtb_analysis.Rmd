@@ -939,13 +939,16 @@ Mapping all Downcountry bikes to XC, the boundaries become almost entirely verti
 
 -   This new spectrum of mapping bikes can provide bike manufacturers and consumers a method to quantify how a bike will handle when ridden.
 
-Let's look at an example from the data above. Some bike companies, like Transition and Revel, do not explicitly categorize their bikes like others do. For these brands, we categorized them based on general attributes, as well as media coverage of them.
+Let's look at an example from the data above. Some bike companies, like Transition and Revel, do not explicitly categorize their bikes like others do. For these brands, we categorized them based on general attributes, as well as media coverage of them. Let's take a look at the Revel Ranger:
+
+![Revel_Ranger](Images/Revel_Ranger.jpg)
 
 | Rear Travel | Fork Travel | Front Piston | Front Rotor Diameter | Rear Piston | Rear Rotor Diameter | Head Angle | Seat Angle | Crank Length | Stem Length | Handlebar Width | Reach | Stack | Wheelbase | Chainstay Length | Bottom Bracket Height | Standover Height |
 |-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|
 | 115         | 120         | 2            | 180                  | 2           | 160                 | 67.5       | 75.3       | 170          | 40          | 780             | 473   | 619   | 1194      | 436              | 338                   | 699              |
 
-Converting to an input vector: $$ 
+Converting to an input vector: 
+$$ 
 \text{Ranger} = \begin{bmatrix}  115 \\ 120 \\ 2 \\ 180 \\ 2 \\ 160 \\ 67.5 \\ 75.3 \\ 170 \\ 40 \\ 780 \\ 473 \\ 619 \\ 1194 \\ 436 \\ 338 \\ 699 \end{bmatrix} \rightarrow \text{   Ranger (scaled)} = \begin{bmatrix}    -0.61 \\ -0.80 \\   -1.68  \\ -0.53  \\ -1.68 \\ -1.30 \\  0.79  \\ -0.39  \\ -0.40 \\-1.15 \\-0.11 \\0.60 \\0.16 \\-0.33 \\0.16 \\-0.16 \\  -1.01 \end{bmatrix} \text{and PC1}=\begin{bmatrix} -0.31 \\  -0.31
         \\ -0.23 \\
       -0.26\\
