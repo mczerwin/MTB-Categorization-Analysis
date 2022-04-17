@@ -59,6 +59,7 @@ theme_update(plot.title = element_text(hjust = 0, color = "slateblue4", size = 2
 # Introduction
 
 ## Project Overview
+
 For this project, our team will determine whether the specifications of mountain bikes (MTB) are enough to differentiate between the different types of mountain bike categories.
 
 Currently, full suspension mountain bikes come in multiple categories:
@@ -69,8 +70,7 @@ Currently, full suspension mountain bikes come in multiple categories:
 -   **All Mountain (AM)** \| A more niche category which some manufacturers claim to be more downhill focused than trail bikes, but not designed for downhill races like Enduro bikes are
 -   **Downcountry (DC)** \| A relatively new category between XC and Trail. Similar to the All Mountain category, these bikes aren't race specific like XC bikes tend to be, but are lighter and faster than trail bikes.
 
-With all of the factors to consider when designing a bike, there are no clear boundaries between these categories. For example, one brand's Downcountry bike could be what another brand considers a Trail bike. The popular mountain biking website PinkBike has done in-depth analyses of many bikes across all categories, and covered the topics of which category bikes should be classified as and of how many categories is sufficient, as seen in the video [here](https://www.youtube.com/watch?v=JYQJbymyG6k&ab_channel=Pinkbike). 
-
+With all of the factors to consider when designing a bike, there are no clear boundaries between these categories. For example, one brand's Downcountry bike could be what another brand considers a Trail bike. The popular mountain biking website PinkBike has done in-depth analyses of many bikes across all categories, and covered the topics of which category bikes should be classified as and of how many categories is sufficient, as seen in the video [here](https://www.youtube.com/watch?v=JYQJbymyG6k&ab_channel=Pinkbike).
 
 **The goal of our project is to determine how many, if any, discrete categories should exist for mountain bikes.** Since most specifications and geometric measurements have one direction when moving across the spectrum of bikes, it's reasonable to believe that these measurements could be reduced to much fewer dimensions, and perhaps even one continuous principle component rather than discrete categories. We can also cluster the bikes together based on some of these specifications and geometric measurements.
 
@@ -79,6 +79,7 @@ As an example, here is a diagram of some of the different types of geometric spe
 ![Various Dimension Features of a Bike's Geometry](Images/Bike_Diagram.png)
 
 ## The Data
+
 The data was retrieved manually from each of the mountain bike company's websites. Let's take a look at the data.
 
 ```{r read_data}
@@ -277,7 +278,6 @@ Here we see:\
 
 ## Average bikes by flip-chip setting
 
-
 ```{r setting}
 # Split data based on setting vs. no setting
 no_setting <- mtb_data %>% 
@@ -324,11 +324,11 @@ Now that we have a better understanding of our mountain bike dataset, we'll form
 
 > **Applying our own clustering algorithms will either give us a different set number of clusters (rather than the 5 pre-ordained categories) OR will not provide clearly defined clusters, leading us to believe that the bikes are actually created on a spectrum and cannot be grouped into one of the 5 pre-ordained categories.**
 
-To do so, we'll:  \
+To do so, we'll:\
 
-- Try to use various methods to reduce the featureset and see if there are certain variables that can better be used to differentiate between different mountain bike categories.  
+-   Try to use various methods to reduce the featureset and see if there are certain variables that can better be used to differentiate between different mountain bike categories.
 
-- Apply various clustering and classification algorithms, including K-Means Clustering, Gaussian Mixture Models, and Multi-class Support Vector Machine, to disprove the notion that 5 distinct categories of Mountain Bikes exist.
+-   Apply various clustering and classification algorithms, including K-Means Clustering, Gaussian Mixture Models, and Multi-class Support Vector Machine, to disprove the notion that 5 distinct categories of Mountain Bikes exist.
 
 ------------------------------------------------------------------------
 
@@ -478,12 +478,13 @@ Here we can see that our top 2 principal components, which explain roughly `r 10
 
 Because we are investigating the validity of mountain bike categories, one approach is to treat this dataset as unsupervised, stripping the bikes of their `label` and seeing if various clustering algorithms can re-create the 5 distinct `label`s. To do so, we'll take a look at the following algorithms:
 
-- K-Means
-- Gaussian Mixture Models (GMM)
-- Support Vector Machine (SVM)
+-   K-Means
+-   Gaussian Mixture Models (GMM)
+-   Support Vector Machine (SVM)
 
 ## K-Means
-We'll start by using the K-Means Clustering algorithm, looking at various numbers of clusters (*k*) and seeing if the bikes logically group together. 
+
+We'll start by using the K-Means Clustering algorithm, looking at various numbers of clusters (*k*) and seeing if the bikes logically group together.
 
 ```{r}
 # How many clusters are necessary? 4?
@@ -588,7 +589,7 @@ In this section, we'll take a more probabilistic model to our clustering. That i
 
 Generally, what we expect to see is something like the following:
 
-![](Images/Theoretical_GMM.png) where, given a specific type of bike, we can predict the probability, $p(x)$ that a bike belongs to a category like `Cross Country (xc)` vs. `Trail` vs. `Enduro`. 
+![](Images/Theoretical_GMM.png) where, given a specific type of bike, we can predict the probability, $p(x)$ that a bike belongs to a category like `Cross Country (xc)` vs. `Trail` vs. `Enduro`.
 
 We'll run the `ClusterR::GMM()` function in R to figure out an optimal number of clusters. It uses the expectation-maximization algorithm to perform the probabilistic clustering; at each iteration, it aims to maximize the Bayesian Information Criterion (BIC) to determine an optimal number of clusters.
 
@@ -610,9 +611,7 @@ opt_gmm <- Optimal_Clusters_GMM(mtb_standard_scaled,
 
 ![Optimal_GMM](Images/GMM_Optimal.png)
 
-
-From the plot above, we see that the BIC value decreases *generally* as the number of clusters increases. However, it appears that the first big drop is when `clusters = 3`. Let's try that value out and see our results.
-
+From the plot above, we see that the BIC value decreases *generally* as the number of clusters increases. However, it appears that the first big drop is when `clusters = 3`. Let's try that value out and see which bike categories get mapped into each of the 3 clusters.
 
 ```{r gmm_optimal}
 
@@ -632,23 +631,17 @@ mtb_gmm_pred <- predict_GMM(mtb_standard_scaled,
                             mtb_gmm$covariance_matrices, 
                             mtb_gmm$weights) 
 
-mtb_gmm_pred <- bind_cols(data.frame(mtb_gmm_pred$log_likelihood),
-                       data.frame(mtb_gmm_pred$cluster_proba),
-                       mtb_gmm_pred$cluster_labels) %>% 
-  as_tibble()
-
-# Rename our columns
-names(mtb_gmm_pred) <- c('log_likelihood_c1', 
-                         'log_likelihood_c2', 
-                         'log_likelihood_c3',
-                         'cluster1_prob',
-                         'cluster2_prob',
-                         'cluster3_prob',
-                         'cluster_labels')
+mtb_gmm_pred <- tibble('log_likelihood_c1' = mtb_gmm_pred$log_likelihood[, 1], 
+                         'log_likelihood_c2' = mtb_gmm_pred$log_likelihood[, 2],  
+                         'log_likelihood_c3' = mtb_gmm_pred$log_likelihood[, 3], 
+                         'cluster1_prob' = mtb_gmm_pred$cluster_proba[, 1], 
+                         'cluster2_prob' = mtb_gmm_pred$cluster_proba[, 2], 
+                         'cluster3_prob' = mtb_gmm_pred$cluster_proba[, 3], 
+                         'cluster_labels' = mtb_gmm_pred$cluster_labels)
 
 mtb_gmm_pred %>% 
   select(cluster_labels) %>% 
-  bind_cols(mtb_no_null$label) %>% 
+  bind_cols(label = mtb_no_null$label) %>% 
   # xtabs(~ ., data = .) %>% 
   table() %>% 
   bind_cols(cluster_labels = c('1', '2', '3')) %>% 
@@ -656,10 +649,9 @@ mtb_gmm_pred %>%
   pander()
 ```
 
-Here we see the predicted cluster labels along with the actual 5 bike categories in our data. We see that Trail and Enduro bikes are mostly grouped into Clusters 1 and 2, while Downcountry and Cross Country bikes are grouped into Cluster 3. This would lead us to believe that the 3 clusters are not necessarily fully representational of the data and that we could suffice with fewer clusters. 
+Here we see the predicted cluster labels along with the actual 5 bike categories in our data. Trail and Enduro bikes are mostly grouped into Clusters 1 and 2, while Downcountry and Cross Country bikes are grouped into Cluster 3. This would lead us to believe that the original 5 bike categories can be sufficiently explained with fewer clusters.
 
 Even so, let's see how the probability of each bike belonging to a cluster appears by looking at the densities of each of the associated probabilities for a bike belonging to one of the cluster labels.
-
 
 ```{r gmm_plots}
 # Plot the densities for our clusters
@@ -697,28 +689,15 @@ gridExtra::grid.arrange(cluster1_pred, cluster2_pred, cluster3_pred, ncol = 3)
 
 ```
 
-Above, we see the expected probability associated with predicting a correct class label. That is, the graph on the left shows how accurate GMM was for predicting bikes fitting into Cluster #1. Generally, the probabilities for the predictions are all above .95; that is, GMM is extremely confident in grouping the different bikes into these 3 clusters.
-
+Above, we see the expected probability associated with predicting a correct class label. That is, the graph on the left shows how accurate the 3-cluster Gaussian Mixture Model was for predicting bikes fitting into Cluster #1. Generally, the probabilities for the predictions are all above .95; that is, GMM is extremely confident in grouping the different bikes into these 3 clusters.
 
 ## Multi-class SVM
 
+If we took a slightly different approach and opted to treat our pre-assigned `label`s as truth, then we could approach this analysis as a supervised learning problem. 
 
-If we were to treat our labels as truth, then we can approach this analysis as a supervised learning model. For this section, we chose to group the All Mountain Category in with Enduro, since it was completely overlapped on the PCA chart above. We also chose to switch around the categorization of the Downcountry category, leaving it as a separate category and grouping it with both Trail and XC to experiment with the results of the model. 
+For this section, we chose to group the All Mountain and Enduro categories, since they completely overlapped in the PCA chart earlier. We also chose to switch the categorization of the Downcountry category, leaving it as a separate category and grouping it with both Trail and XC to experiment with the results of the model.
 
-
-We chose to use a Multi-Class Support Vector Machine, and a grid search to tune the kernel functions and $\gamma$ values. For each set of parameters, we used K-fold cross validation with k=10 on all rows of the data. We decided against holding out data as a test set since we have such limited data, and the K-fold CV should evaluate the model's performance on blind data. 
-
-
-Using all of the data, the best SVM model was 73% accurate, using a Radial Basis kernel function with $\gamma=2.595024$
-
-
-Treating the Downcountry category as XC, the best model was 81.6% accurate, with a Radial Basis kernel function with $\gamma=0.02983647$
-
-
-Treating the Downcountry category as Trail, the best model was 80.0% accurate with a Radial Basis kernel function with $\gamma=3.764936$
-
-Of course, grouping this category with one of its adjacent categories we expect to see an increase in performance, but this could suggest that the Downcountry category is slightly more skewed towards the XC bikes. 
-
+We chose to use a Multi-Class Support Vector Machine (SVM), and a grid search to tune the kernel functions and $\gamma$ values. For each set of parameters, we used 10-fold cross validation on all rows of the data. We decided against holding out data as a test set since we have such limited data, and the 10-fold CV should evaluate the model's performance on blind data.
 
 ```{r}
 p_load(e1071,
@@ -794,9 +773,6 @@ trainSVM <- function(x, y, idx, k='radial basis', g=0){
 
 # Roughly 66.6% accuracy when treating down country as separate category
 # But - roughly 68.8% accuracy when treating down country as XC, only 69% accuracy when treating downcountry as trail, suggests that downcountry bikes are more akin to trail than they are XC
-```
-
-```{r}
 
 folds <- createFolds(labels, k=10)
 
@@ -855,9 +831,15 @@ for (k in kernels){
 
 ```
 
+Using all of the data, the best SVM model was 73% accurate, using a Radial Basis kernel function with $\gamma=2.595024$
 
-To visualize the SVM, we again mapped all features to the 2 Principal Components. In this scenario, we actually acheived a higher accuracy of 75% using a linear kernel, again treating the Downcountry category as its own distinct category. 
+Treating the Downcountry category as XC, the best model was 81.6% accurate, with a Radial Basis kernel function with $\gamma=0.02983647$
 
+Treating the Downcountry category as Trail, the best model was 80.0% accurate with a Radial Basis kernel function with $\gamma=3.764936$
+
+Logically, grouping Downcountry bikes with one of their adjacent categories should naturally lead to an increase in performance; however, this could suggest that the Downcountry category is slightly more skewed towards the XC bikes.
+
+To visualize the results of the SVM classifier, we mapped all features to the 2 Principal Components. In so doing, we were able to achieve a higher accuracy of 75% using a linear kernel, while continuing to treat the Downcountry category as its own distinct category.
 
 ```{r}
 ## This cell only to visualize linear kernel
@@ -879,9 +861,9 @@ df <- data.frame(grid, preds)
 
 ggplot(df, aes(x = PC1, y = PC2)) + 
   geom_tile(aes(fill = preds), alpha = .2) +
-    scale_fill_manual(values = c('slateblue4', 'gray', 'slateblue1', 'green', 'red')) +
+  scale_fill_manual(values = c('slateblue', 'green', 'gray', 'slateblue4'), name = 'Predictions') +
   geom_point(data = dat, aes(shape = labels, color = labels), size = 2) + 
-  scale_color_manual(values = c('slateblue4', 'gray', 'slateblue1', 'green', 'red')) +
+  scale_color_manual(values = c('slateblue', 'green', 'gray', 'slateblue4')) +
   labs(title = "Support Vector Machine Classification",
          x = 'Principal Component 1',
          y = 'Principal Component 2')
@@ -889,10 +871,9 @@ ggplot(df, aes(x = PC1, y = PC2)) +
 
 ```
 
+In the chart above, we can see how SVM closely maps the actual labels of the bike categories to their predicted categories. There are some misclassifications (when different colored dots appear in a differently shaded region), but overall the shaded SVM feature spaces seem to be accurate representations of the bike categories. 
 
-An interesting observation is that most of the boundary lines are more or less vertical, suggesting that most of the variation between classes is along Principal Component 1. We see this deviate between the XC and Downcountry boundary, however the validity of this boundary is still in question since the Downcountry category itself is more or less unofficial.
-
-
+An interesting observation is that most of the boundary lines are more or less vertical, suggesting that most of the variation between classes is along Principal Component 1. We see this deviate between the XC and Downcountry boundary, however the validity of this boundary is still in question since the Downcountry category itself is more or less unofficial. Let's try remapping Downcountry bikes to the Cross Country (XC) category and review the updated results.
 
 ```{r}
 # DC as XC, using Linear
@@ -929,17 +910,20 @@ pcsvm2 <- svm(x=pca_2_scaled, y=labels2, kernel='linear')
 preds2 <- predict(pcsvm2, grid)
 df2 <- data.frame(grid, preds2)
 
+
+
 ggplot(df2, aes(x = PC1, y = PC2)) + 
-  geom_tile(aes(fill=preds2)) +
-  geom_point(data = dat, aes(shape = labels2), size = 2) + 
+  geom_tile(aes(fill = preds2), alpha = .2) +
+  scale_fill_manual(values = c('slateblue', 'gray', 'green'), name = 'Predictions') +
+  geom_point(data = dat, aes(shape = labels2, color = labels2), size = 2) + 
+  scale_color_manual(values = c('slateblue', 'gray', 'green')) +
   labs(title = "Support Vector Machine Classification",
          x = 'Principal Component 1',
          y = 'Principal Component 2')
 
 ```
- Mapping all Downcountry bikes to XC, the boundaries become almost entirely vertical, again suggesting that the classification of bikes can be attributed to Principal Component 1. 
 
-
+Mapping all Downcountry bikes to XC, the boundaries become almost entirely vertical, again suggesting that the classification of bikes can be attributed to Principal Component 1. The distinct regions appear to be accurate predictors of the 3 bike categories and are simple to explain, which would mean that we have effectively reduced the bias in our model.
 
 ------------------------------------------------------------------------
 
@@ -953,19 +937,15 @@ ggplot(df2, aes(x = PC1, y = PC2)) +
 
 -   To obtain where a specific bike lies on this scale, one can use the linear combination of the bike's specifications and the first principal component.
 
--   This new spectrum of mapping bikes can provide bike manufacturers and consumers a method to quantify how a bike will handle when ridden. 
+-   This new spectrum of mapping bikes can provide bike manufacturers and consumers a method to quantify how a bike will handle when ridden.
 
+Let's look at an example from the data above. Some bike companies, like Transition and Revel, do not explicitly categorize their bikes like others do. For these brands, we categorized them based on general attributes, as well as media coverage of them.
 
-Let's look at an example from the data above. Some bike companies, like Transition and Revel, do not explicitly categorize their bikes like others do. For these brands, we categorized them based on general attributes, as well as media coverage of them. 
+| Rear Travel | Fork Travel | Front Piston | Front Rotor Diameter | Rear Piston | Rear Rotor Diameter | Head Angle | Seat Angle | Crank Length | Stem Length | Handlebar Width | Reach | Stack | Wheelbase | Chainstay Length | Bottom Bracket Height | Standover Height |
+|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|
+| 115         | 120         | 2            | 180                  | 2           | 160                 | 67.5       | 75.3       | 170          | 40          | 780             | 473   | 619   | 1194      | 436              | 338                   | 699              |
 
-| Rear Travel | Fork Travel | Front Piston | Front Rotor Diameter | Rear Piston | Rear Rotor Diameter | Head Angle | Seat Angle | Crank Length | Stem Length | Handlebar Width | Reach | Stack | Wheelbase | Chainstay Length | Bottom Bracket Height | Standover Height | 
-| -- | -- | -- | -- | -- | -- |-- | -- | -- |-- | -- | -- |-- | -- | -- |-- | -- |
-| 115 | 120 | 2 | 180 | 2 | 160 | 67.5 | 75.3 | 170 | 40 | 780 | 473 | 619 | 1194 | 436 | 338 | 699 |
-
-
-
-Converting to an input vector: 
-$$ 
+Converting to an input vector: $$ 
 \text{Ranger} = \begin{bmatrix}  115 \\ 120 \\ 2 \\ 180 \\ 2 \\ 160 \\ 67.5 \\ 75.3 \\ 170 \\ 40 \\ 780 \\ 473 \\ 619 \\ 1194 \\ 436 \\ 338 \\ 699 \end{bmatrix} \rightarrow \text{   Ranger (scaled)} = \begin{bmatrix}    -0.61 \\ -0.80 \\   -1.68  \\ -0.53  \\ -1.68 \\ -1.30 \\  0.79  \\ -0.39  \\ -0.40 \\-1.15 \\-0.11 \\0.60 \\0.16 \\-0.33 \\0.16 \\-0.16 \\  -1.01 \end{bmatrix} \text{and PC1}=\begin{bmatrix} -0.31 \\  -0.31
         \\ -0.23 \\
       -0.26\\
@@ -983,12 +963,12 @@ $$
         -0.25\\
   0.08\end{bmatrix}
 $$
-  
+
 $$ 
 \text{Ranger} \times \text{PC1} = 1.7
 $$
 
-Mapping the Revel Ranger to its first Principal Component we get a value of 1.7 which puts us right around the boundary between Trail and XC, which lines up with the PinkBike editors' labelling of Downcountry in the [video](https://www.youtube.com/watch?v=JYQJbymyG6k) mentioned in the Project Overview section.  
+Mapping the Revel Ranger to its first Principal Component we get a value of 1.7 which puts us right around the boundary between Trail and XC, which lines up with the PinkBike editors' labelling of Downcountry in the [video](https://www.youtube.com/watch?v=JYQJbymyG6k) mentioned in the Project Overview section.
 
 ```{r eval=FALSE, include=FALSE}
 #Get Ranger stats
@@ -1003,7 +983,6 @@ round(mtb_standard_scaled['ranger', ] %*% as.matrix(mtb_pca_scaled$rotation[,1])
 pca_2_scaled
 ```
 
-
 ## Opportunities for Improved Analysis
 
 There are a few opportunities to improve the analysis included in this presentation and forthcoming report:
@@ -1017,24 +996,19 @@ There are a few opportunities to improve the analysis included in this presentat
 -   **Include bikes across multiple years** \| As bike trends slowly change, it'd be interesting to see how the data shifts across time. For example, the Rocky Mountain Element reduced its head angle from 70 degrees to 65.8 in one iteration of the bike. Including data from past years could provide valuable market insights into how the industry as a whole is moving.
 
 ## Lessons Learned
+
 As both authors of this report are in the midst of the [Online Masters of Science of Analytics (OMSA)](https://pe.gatech.edu/degrees/analytics) program, we feel that it provided reinforcement on previously seen data mining topics as well as good introductions to net new topics. Here are some individual takes on the lessons learned from the course.
 
-**Mike:**  I think this course was a great complement to [ISYE6740, Computational Data Analytics](https://www2.isye.gatech.edu/~yxie77/ISyE6740SyllabusSpring2018.pdf) (CDA), which was a bit more theory focused, e.g. requiring us to build ML algorithms from scratch, while this course seemed more practical focused, e.g. HW 5 allowing us to use machine learning methods on any dataset of our choice. Additionally, I think this course was a good course to take concurrently with Data Visual Analytics, as it also required the use of Random Forests, and provided a good introduction to data analysis techniques that are standard across any project (e.g. cross validation).
-
+**Mike:** I think this course was a great complement to [ISYE6740, Computational Data Analytics](https://www2.isye.gatech.edu/~yxie77/ISyE6740SyllabusSpring2018.pdf) (CDA), which was a bit more theory focused, e.g. requiring us to build ML algorithms from scratch, while this course seemed more practical focused, e.g. HW 5 allowing us to use machine learning methods on any dataset of our choice. Additionally, I think this course was a good course to take concurrently with Data Visual Analytics, as it also required the use of Random Forests, and provided a good introduction to data analysis techniques that are standard across any project (e.g. cross validation).
 
 **Justin:** I really appreciated the practical nature of this course. I've already had the opportunity to use some of the classification and machine learning algorithms at work. Although this is a different take on ISYE 6740, Computational Data Analytics (CDA), I appreciated getting to do a similar-style course in my programming language of choice (R) and to get to really dive into the actual code, which has already paid numerous dividends in a practical setting. I took this course concurrently with [ISYE 6414](https://www.studocu.com/en-us/document/georgia-institute-of-technology/regression-analysis/isy-e-6414-syllabus-spring-2022/23788135), Regression Analysis. Although 6414 was recommended as a prerequisite for this course, it ended up being a nice pairing of courses.
 
-
-
-
 ## Course Suggestions
 
-This course was a good introduction for practical applications. Some areas of improvement we would like to see included: 
+This course was a good introduction for practical applications. Some areas of improvement we would like to see included:
 
-- Requiring more fundamental knowledge checks for some material. More specifically, we think the topics around Information Criterion and Discriminant analysis were glossed over too quickly. This course was our first exposure to those topics, so we're not sure if they were intentionally light on the material since they are not used in industry as much. 
+-   Requiring more fundamental knowledge checks for some material. More specifically, we think the topics around Information Criterion and Discriminant analysis were glossed over too quickly. This course was our first exposure to those topics, so we're not sure if they were intentionally light on the material since they are not used in industry as much.
 
-- Additionally, we think the assignments in this course could have been more clear, however, we also think this could have been intentional to mimic the ambiguity of working in industry.
+-   Additionally, we think the assignments in this course could have been more clear, however, we also think this could have been intentional to mimic the ambiguity of working in industry.
 
-- A lot of the quizzes ended up needing (or at least seriously benefiting from) pre-written code based on the knowledge checks. Writing the code was fun to make the quizzes more bearable; however, we would've loved to see the instructor/TAs post this kind of code after the quiz due dates so students could benefit from understanding how to solve the problems in R.
-
-
+-   A lot of the quizzes ended up needing (or at least seriously benefiting from) pre-written code based on the knowledge checks. Writing the code was fun to make the quizzes more bearable; however, we would've loved to see the instructor/TAs post this kind of code after the quiz due dates so students could benefit from understanding how to solve the problems in R.
