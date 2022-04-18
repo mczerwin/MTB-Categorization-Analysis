@@ -2,16 +2,23 @@
 title: "Mountain Bike (MTB) Categorization Analysis"
 author: "Michael Czerwinski & Justin Schulberg"
 date: "`r Sys.Date()`"
+# output:
+#   rmdformats::readthedown:
+#     self_contained: TRUE
+#     toc_depth: 4
+#     highlight: tango
+#     code_folding: hide
+#     lightbox: TRUE
+#     gallery: TRUE
+#     toc_float: # a float toc will stick to the sidebar when scrolling
+#       collapsed: false
+      
 output:
-  rmdformats::readthedown:
-    self_contained: TRUE
-    toc_depth: 4
-    highlight: tango
-    code_folding: hide
-    lightbox: TRUE
-    gallery: TRUE
-    toc_float: # a float toc will stick to the sidebar when scrolling
-      collapsed: false
+  prettydoc::html_pretty:
+    theme: architect
+    highlight: github
+code_folding: TRUE 
+      
 ---
 
 ```{r fig.align='center', fig.height=6, fig.width=6, message=FALSE, warning=FALSE, include=FALSE}
@@ -20,7 +27,7 @@ knitr::opts_chunk$set(fig.width = 9,
                       fig.height = 6,
                       fig.align = "center",
                       # Set our code specifications for the rest of the document
-                      echo = T,
+                      echo = F,
                       warning = F,
                       message = F)
 
