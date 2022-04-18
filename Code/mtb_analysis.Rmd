@@ -80,7 +80,7 @@ As an example, here is a diagram of some of the different types of geometric spe
 
 ## The Data
 
-The data was retrieved manually from each of the mountain bike company's websites. Let's take a look at the data.
+The data was retrieved manually from each of the mountain bike company's websites. All data and associated code for this project is available at the team's corresponding [GitHub repository](https://github.com/mczerwin/MTB-Categorization-Analysis). Let's take a look at the data.
 
 ```{r read_data}
 # Read in sheet 2 of our data
