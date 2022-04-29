@@ -40,5 +40,5 @@ There are two approaches we can consider when analyzing this data. The first wou
 
 The second approach would be to strip all bikes of their labels, and treat our analysis as an unsupervised learning model. This may prove to be more insightful considering the risks above. We plan to use Gaussian Mixture Models and K-Means clustering algorithms to determine how many discrete categories of bikes should exist, and where in the hyperspace of bike features their centroids should lie. 
 
-
+# Disclaimer
 **The content included in this repository is solely responsibility of the authors and does not necessarily represent the views of the Georgia Institute of Technology, the Georgia Tech Online Masters of Science in Analytics (OMSA) program, instructors, and teaching assistants.**
